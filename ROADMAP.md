@@ -24,23 +24,30 @@
 
 ## 已完成 / Delivered
 
-暂无。当前仓库只有移植方案、路线图与 `changes/pikit-julia-port/` 规划产物。
+- 一期 v0.1 代码、测试与文档已交付：`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块、三个 Provider、AgentCore 循环、8 个编码工具、会话 v3 子集、压缩/溢出/重试、print/JSON/RPC/REPL、日志与 CLI。
+- 零网络全量测试通过：`PIKIT_AGENT_DIR=$(mktemp -d) julia --project=. -e 'using Pkg; Pkg.test()'`。
+- faux 端到端、JSON/RPC 冒烟通过；真实 `rg`/`fd` 下载与 `.gitignore` 集成冒烟通过。
+- GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；`v0.1.0` tag 与 Release 已发布。
+- 文档已交付：`docs/cli.md`、`docs/json.md`、`docs/sessions.md`、`docs/upstream-compat.md`、`docs/julia-improvements.md` 与改进记录检查器。
 
 ## 进行中 / In Progress
 
-- 一期 v0.1 核心闭环：三个 Provider、agent 循环、8 个工具、会话 v3 子集、四种入口、日志——`change: pikit-julia-port`（规划/待批准）。
+- **General 注册**：PR [JuliaRegistries/General#175351](https://github.com/JuliaRegistries/General/pull/175351) 已创建；Registry Consistency/Treecheck 通过，剩余 AutoMerge 项为包名相似（`PiKit` vs Pinot/EDKit/PEPit/Pilot/PLSKit/MPSKit），已提交人工审核/合并请求。合并前 `Pkg.add("PiKit")` 不可用。
+- 旧 PR #175350 已评论标记为 superseded（作者为 `JuliaRegistrator` bot，仓库账号无关闭权限，等待 General 维护者清理）。
 
 ## 已完成变更 / Completed Changes
 
 | 功能 | Change | 状态 |
 |---|---|---|
-| — | — | — |
+| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；GitHub 仓库与 `v0.1.0` Release 已发布；General 注册 #175351 待人工合并 |
 
 ## 待办 / Planned
 
 ### 一期（v0.1）：可交付闭环
 
 一期范围：单包 `PiKit`（`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块）、`openai-completions` / `anthropic-messages` / `faux` 三个 Provider、8 个工具（read/bash/powershell/edit/write/grep/find/ls）、会话 v3 子集、print/JSON/RPC/行式 REPL、压缩/溢出/重试、CLI 子集。
+
+**状态：代码、测试、文档与 `v0.1.0` Release 已完成；General 注册 PR #175351 待人工合并，合并前 `Pkg.add("PiKit")` 不可用。**
 
 | 功能 | 说明 | Change |
 |---|---|---|
@@ -54,7 +61,7 @@
 | 开发过程 | 三期通用：每波记录、稳定 ID、检查器与每期发布门禁 | `pikit-julia-port` |
 | 发布 | 文档、`v0.1.0` tag、General 注册 | `pikit-julia-port` |
 
-**发布策略：一期即提交 General**（`PiKit` 名称已核对未被占用）。以 `0.x` 版本发布并明确 API 未冻结；安装方式 `Pkg.add("PiKit")`，源码安装仍支持 `Pkg.develop(path=...)`。注册动作在 M8 完成。
+**发布策略：一期即提交 General**（`PiKit` 名称已核对未被占用）。以 `0.x` 版本发布并明确 API 未冻结；注册合并后安装方式 `Pkg.add("PiKit")`，此前源码安装使用 `Pkg.develop(path=...)` 或 `Pkg.develop(url="https://github.com/lysharedfuture/PiKit.jl")`。注册 PR #175351 正在等待人工审核/合并。
 
 一期必须留下的“二期钩子”：
 
@@ -112,16 +119,21 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 
 ## 已知缺陷 / Known Issues
 
-暂无。
+- **General 注册未合并**：PR #175351 的 Registry Consistency/Treecheck 已通过，但 AutoMerge 因包名相似（Pinot/EDKit/PEPit/Pilot/PLSKit/MPSKit）需要人工审核；合并前不能通过 `Pkg.add("PiKit")` 安装。
+- **Windows PowerShell 实机未验证**：当前环境为 Linux；非 Windows 返回错误路径已有测试，`powershell` 的实际 Windows 冒烟待补。
+- **REPL TTY 手工验证未执行**：自动测试覆盖 stdin/print 路径；真实 TTY 下的斜杠命令、流式渲染与 Ctrl+C 中止需手工冒烟。
+- 旧 General PR #175350 仍处于 open 状态，等待维护者关闭；新 PR #175351 为有效注册单。
 
 ## 里程碑 / Milestones
 
-- **一期 v0.1**：未开始（M0–M8；`change: pikit-julia-port`）。
+- **一期 v0.1**：**已完成 M0–M8 的代码/测试/文档与 `v0.1.0` Release；General 注册 PR #175351 待人工合并**（`change: pikit-julia-port`）。
 - **二期 v0.2–v0.4**：未开始（2A–2D）。
 - **三期 v0.5–v1.0**：未开始（3A–3E）。
 - **改进记录门禁**：一期 M8 `--phase 1 --strict`；二期各子阶段收口 `--phase 2 --strict`；三期 v1.0 `--all --strict`。
 
 ### 一期里程碑 M0–M8
+
+**M0–M7 已完成；M8 的文档、tag、Release 与 GitHub 仓库已完成，General 注册 PR #175351 待人工合并。**
 
 | 里程碑 | 范围 | 退出标准（可执行） | 依赖 |
 |---|---|---|---|
@@ -133,7 +145,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 | **M5 会话+E2E** | session（header 校验/尾部修复/`context_edit`/build_context）、system_prompt、runtime、config、print | v3 fixture 往返；compaction+`context_edit` 重建；`-p` faux 端到端 | M3、M4 |
 | **M6 协议模式** | JSON 事件全集、RPC 命令与 `disposition`、REPL、CLI 全量 flag | JSON 快照匹配 `docs/json.md`；RPC 冒烟；REPL 手工 | M5 |
 | **M7 压缩与恢复** | compaction（usage 锚点/切点/entry 字段）、溢出恢复、retry 集成 | 阈值压缩、413 溢出重试、配额 429 不重试三条端到端 | M6 |
-| **M8 发布** | docs、README、julia-improvements 检查器、tag、**General 注册** | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过；`Pkg.add("PiKit")` 可从注册表安装（AutoMerge 合并）；真实 Provider 手工冒烟 | M7 |
+| **M8 发布** | docs、README、julia-improvements 检查器、tag、**General 注册** | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 与 `v0.1.0` Release（已完成）；`Pkg.add("PiKit")` 可从注册表安装（PR #175351 待人工合并）；真实 Provider 手工冒烟 | M7 |
 
 ## 依赖关系 / Dependencies
 
