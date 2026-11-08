@@ -1,6 +1,6 @@
 # PiKit.jl 路线图 / Roadmap
 
-> 上游基线：`earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a`（2026-11-04），`pi-ai` / `pi-agent-core` / `pi-coding-agent` 均 1.5.0。
+> 起始上游基线：`earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a`（2026-11-04），`pi-ai` / `pi-agent-core` / `pi-coding-agent` 当时报告 1.5.0；当前验证基线、能力矩阵与同步记录见 `docs/upstream-compat.md`。
 > 项目级功能路线图。细粒度状态由 spec-superflow 的 `changes/<name>/` 维护；规范性需求在 `specs/<capability>/spec.md`，增量需求在 `changes/<name>/specs/`；日志纪律见 `.omp/RULES.md`；开发过程（含 Julia 改进记录）见 `specs/development-process/spec.md`。
 > 本文件只维护功能级条目、change 关联、跨期契约、风险与决策；不复制 `tasks.md` 的子任务状态。
 
@@ -125,7 +125,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 
 | 里程碑 | 范围 | 退出标准（可执行） | 依赖 |
 |---|---|---|---|
-| **M0 骨架** | git init、`Project.toml`、三模块空壳、`bin/pikit`、CI、LICENSE/NOTICE、`scripts/fetch-upstream.sh` | `using PiKit` 输出 `ok`；CI 绿；`.upstream/` 按 pin 落地 | — |
+| **M0 骨架** | git init、`Project.toml`、三模块空壳、`bin/pikit`、CI、LICENSE/NOTICE、`scripts/fetch-upstream.sh` | `using PiKit` 输出 `ok`；CI 绿；`.upstream/` 按 `UPSTREAM_REF` 落地 | — |
 | **M1 AI 基础** | types、json、sse、event_stream、schema 子集、models、credentials、retry/overflow 纯函数 | codec roundtrip、SSE 边界、schema 错误路径、retry 分类、overflow 三类检测 | M0 |
 | **M2 Provider** | openai-completions、anthropic-messages、faux、registry；缓存与工具规则、流映射、错误编码 | mock 请求体快照；faux 事件序列；非 2xx/中止生成 `ErrorEvent` | M1 |
 | **M3 循环** | agent_core/types、loop、agent：hook、并行工具、队列、listener、失败兜底 | faux 序列/并行顺序/steering/finish_turn；`abort!` 200ms 内 `agent_end` | M1、M2(faux) |
@@ -153,7 +153,7 @@ rg / fd（运行时；tools manager 解析或下载）
 - 事件/消息 wire 形状、会话 v3 基线字段、RPC 帧、工具结果结构稳定；新增能力只加字段/加事件，不改既有含义。
 - 会话读取永远向后兼容：未知 entry 保留、未知字段进 `extra`。
 - Provider 通过注册表扩展，核心不新增 switch 分支。
-- 每期更新 `docs/compat.md`（与上游 pin 的差异表）；偏差只减不增。
+- 每次同步上游后更新 `docs/upstream-compat.md`（当前验证基线与差异表）；README/NOTICE/脚本不承担永久 pin 语义；偏差只减不增。
 - 0.x 期间允许破坏性变更，但必须附迁移说明；v1.0 起冻结。
 
 ## 待决决策 / Decisions Pending

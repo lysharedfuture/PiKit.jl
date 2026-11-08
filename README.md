@@ -1,8 +1,9 @@
 # PiKit.jl
 
 Unofficial Julia port of the [pi](https://github.com/earendil-works/pi) agent
-stack (`pi-ai`, `pi-agent-core`, `pi-coding-agent`), pinned to upstream commit
-`06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a` (v1.5.0).
+stack (`pi-ai`, `pi-agent-core`, `pi-coding-agent`). The currently verified
+upstream baseline, capability matrix, known deviations, and sync procedure are
+tracked in [`docs/upstream-compat.md`](docs/upstream-compat.md).
 
 PiKit is an independent MIT-licensed project. It is not affiliated with the
 upstream authors.

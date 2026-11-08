@@ -1,8 +1,9 @@
 PiKit is an unofficial Julia port of the pi agent stack.
 
 Upstream source: https://github.com/earendil-works/pi
-Pinned commit: 06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a
-Upstream packages: pi-ai, pi-agent-core, pi-coding-agent (v1.5.0)
+Initial port commit: 06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a
+Upstream packages: pi-ai, pi-agent-core, pi-coding-agent
+Current compatibility baseline: docs/upstream-compat.md
 
 Upstream license:
 
