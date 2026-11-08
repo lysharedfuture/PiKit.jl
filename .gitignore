@@ -1,0 +1,10 @@
+# 本地移植方案：仅保留在工作区，不入库
+PIKIT_JULIA_PORT_PLAN.md
+
+# spec-superflow 变更目录：仅本地，不入库
+changes/
+
+# 上游快照与运行时状态
+.upstream/
+.pikit/
+*.cov
