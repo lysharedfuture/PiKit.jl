@@ -3,7 +3,7 @@
 Unofficial Julia port of the [pi](https://github.com/earendil-works/pi) agent
 stack (`pi-ai`, `pi-agent-core`, `pi-coding-agent`). The currently verified
 upstream baseline, capability matrix, known deviations, and sync procedure are
-tracked in [`docs/upstream-compat.md`](docs/upstream-compat.md).
+tracked in [`docs/src/upstream-compat.md`](docs/src/upstream-compat.md).
 
 PiKit is an independent MIT-licensed project. It is not affiliated with the
 upstream authors.
@@ -16,7 +16,18 @@ Pkg.add("PiKit")          # once registered
 Pkg.develop(path="/path/to/PiKit")  # local development
 ```
 
-Requires Julia 1.13+. Runtime dependencies: `HTTP`, `JSON3`, stdlib only.
+Requires Julia 1.13+. Runtime dependencies: `HTTP`, `JSON`, `ripgrep_jll`,
+stdlib.
+
+Installed CLI entry point (from an environment containing PiKit):
+
+```sh
+julia -m PiKit -p "hi"
+julia -m PiKit --mode json -p "hi"
+julia -m PiKit --version
+```
+
+From a repository checkout, `bin/pikit` is equivalent.
 
 ## Quick start (offline faux provider)
 
@@ -56,7 +67,7 @@ OAuth login, HTML export, image resizing, branch summarization, telemetry,
 `tool.replay`/`output_schema`, deferred polling, `context_edit` replacement
 semantics, split-turn compaction summaries.
 
-Known deviations are recorded in `docs/julia-improvements.md`. Failed
+Known deviations are recorded in `docs/src/julia-improvements.md`. Failed
 assistant messages are not persisted (upstream keeps them and filters them
 with `context_edit`); upstream sessions containing `context_edit` are read
 with `replacement: null` exclusion semantics.
@@ -68,4 +79,4 @@ PIKIT_AGENT_DIR=$(mktemp -d) julia --project=. -e 'using Pkg; Pkg.instantiate();
 julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream
 ```
 
-See `docs/cli.md`, `docs/json.md` and `docs/sessions.md`.
+See `docs/src/cli.md`, `docs/src/json.md` and `docs/src/sessions.md`.

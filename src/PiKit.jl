@@ -9,8 +9,13 @@ include("ai/AI.jl")
 include("agent_core/AgentCore.jl")
 include("coding/CodingAgent.jl")
 
-"""Entry point for the `pikit` CLI. Returns a process exit code."""
-main(args=ARGS) = CodingAgent.main(args)
+"""`julia -m PiKit ...` entry point. Returns a process exit code."""
+function (@main)(args)
+    return CodingAgent.main(args)
+end
+
+"""Programmatic entry point using the process arguments."""
+main() = CodingAgent.main(ARGS)
 
 function __init__()
     install_logging!()

@@ -1,0 +1,9 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+PiKit = "31a94650-92d9-47a7-b751-fcb2edf0c25a"
+
+[sources]
+PiKit = {path = "/home/ly/AIProjects/PiKit"}
+
+[compat]
+Documenter = "1"

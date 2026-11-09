@@ -79,8 +79,8 @@
 ### W3-02 rg/fd 外部工具管理与 `.gitignore` 语义
 
 - 上游：packages/coding-agent/src/utils/tools-manager.ts:1
-- 观察：grep/find 复用 ripgrep/fd 的 `.gitignore`、隐藏文件与二进制跳过语义，工具路径按本地 bin、PATH、平台 release 顺序解析。
-- Julia 方案：`ensure_tool` 先查 `agent_dir/bin` 与 PATH，再按平台下载并用 `tar`/`unzip` 解压；`PIKIT_OFFLINE=1` 禁止下载；grep 使用 `rg --no-config --json`，find 在 git 仓库外追加 `--no-require-git`。
+- 观察：grep/find 复用 ripgrep/fd 的 `.gitignore`、隐藏文件与二进制跳过语义；上游通过外部工具路径解析，且新包不应在运行时下载第三方二进制。
+- Julia 方案：`grep` 使用 `ripgrep_jll.rg()`，由 Pkg/Artifacts 提供全平台二进制；`find` 等待 fd_jll（Yggdrasil `F/fd`）后替换现有 fd 下载；在 JLL 可用前保留临时 `ensure_tool` 路径。
 - 结论：采纳
 
 ### W3-03 文本 diff 实现

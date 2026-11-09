@@ -3,7 +3,7 @@ module AI
 using Logging
 using Dates
 using Random
-using JSON3
+using JSON
 using HTTP
 
 include("types.jl")

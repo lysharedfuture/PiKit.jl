@@ -1,5 +1,5 @@
 @testset "documented JSON events" begin
-    docs = read(joinpath(dirname(@__DIR__), "..", "docs", "json.md"), String)
+    docs = read(joinpath(dirname(@__DIR__), "..", "docs", "src", "json.md"), String)
     documented = String[]
     for line in split(docs, '\n')
         m = match(r"^\|\s*`([a-z_]+)`\s*\|", line)

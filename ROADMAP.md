@@ -1,6 +1,6 @@
 # PiKit.jl 路线图 / Roadmap
 
-> 起始上游基线：`earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a`（2026-11-04），`pi-ai` / `pi-agent-core` / `pi-coding-agent` 当时报告 1.5.0；当前验证基线、能力矩阵与同步记录见 `docs/upstream-compat.md`。
+> 起始上游基线：`earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a`（2026-11-04），`pi-ai` / `pi-agent-core` / `pi-coding-agent` 当时报告 1.5.0；当前验证基线、能力矩阵与同步记录见 `docs/src/upstream-compat.md`。
 > 项目级功能路线图。细粒度状态由 spec-superflow 的 `changes/<name>/` 维护；规范性需求在 `specs/<capability>/spec.md`，增量需求在 `changes/<name>/specs/`；日志纪律见 `.omp/RULES.md`；开发过程（含 Julia 改进记录）见 `specs/development-process/spec.md`。
 > 本文件只维护功能级条目、change 关联、跨期契约、风险与决策；不复制 `tasks.md` 的子任务状态。
 
@@ -28,7 +28,7 @@
 - 零网络全量测试通过：`PIKIT_AGENT_DIR=$(mktemp -d) julia --project=. -e 'using Pkg; Pkg.test()'`。
 - faux 端到端、JSON/RPC 冒烟通过；真实 `rg`/`fd` 下载与 `.gitignore` 集成冒烟通过。
 - GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；`v0.1.0` tag 与 Release 已发布。
-- 文档已交付：`docs/cli.md`、`docs/json.md`、`docs/sessions.md`、`docs/upstream-compat.md`、`docs/julia-improvements.md` 与改进记录检查器。
+- 文档已交付：`docs/src/cli.md`、`docs/src/json.md`、`docs/src/sessions.md`、`docs/src/upstream-compat.md`、`docs/src/julia-improvements.md` 与改进记录检查器。
 
 ## 进行中 / In Progress
 
@@ -73,12 +73,12 @@
 
 | 子阶段 | 内容 | 退出标准 | Change |
 |---|---|---|---|
-| **2A 拆包** | `PiAI.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl`；`PiKit.jl` 变为聚合与 CLI 层；模块间只用公开 API | 三包独立测试绿；PiKit 快照回归与 v0.1 一致；三个包提交 General | 未建档 |
-| **2B durable** | `PiDurable.jl`：持久化运行、effect 记录与 `replay(:never\|:safe)`、`deferred` 轮询、崩溃后续跑、`context_edit` 全语义、compaction `details`/`fromHook` | `kill -9` 后可续跑；durable 会话可被 pi 读取；重放不重复副作用 | 未建档 |
-| **2C ai 广度** | `openai-responses`、`google-generative-ai`/vertex、bedrock、mistral、azure、images/classifiers、OAuth/login、long cache | 每 Provider 一套 mock 请求体快照 + 一次真实手工冒烟 | 未建档 |
-| **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；telemetry 接口 | schema 通过上游 fixture；MCP 连本地 server；遥测可关 | 未建档 |
+| **2A 拆包** | `PiAI.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl`；`PiKit.jl` 变为聚合与 CLI 层；模块间只用公开 API | 三包独立测试绿；PiKit 快照回归与 v0.1 一致；三个包提交 General | `changes/phase2a-package-split` |
+| **2B durable** | `PiDurable.jl`：持久化运行、effect 记录与 `replay(:never\|:safe)`、`deferred` 轮询、崩溃后续跑、`context_edit` 全语义、compaction `details`/`fromHook` | `kill -9` 后可续跑；durable JSONL store 可被上游 `pi-durable` 打开；重放不重复副作用 | `changes/phase2b-durable-runtime` |
+| **2C ai 广度** | `openai-responses`、`google-generative-ai`/vertex、bedrock、mistral、azure、images/classifiers、OAuth/login、long cache | 每 Provider 一套 mock 请求体快照 + 一次真实手工冒烟 | `changes/phase2c-ai-providers` |
+| **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；telemetry 接口 | schema 通过上游 fixture；MCP 连本地 server；遥测可关 | `changes/phase2d-schema-mcp-telemetry` |
 
-依赖：2A 先行；2B/2C/2D 在拆包后并行；2D 的 schema 是 2C strict tools 的前置。
+依赖：2A 先行；2B/2C/2D 在拆包后并行；2D 的 schema 是 strict tools 的前置（两者都在 2D 收口）。
 
 ### 三期（v0.5–v1.0）：生态与交互对等
 
@@ -127,7 +127,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 ## 里程碑 / Milestones
 
 - **一期 v0.1**：**已完成 M0–M8 的代码/测试/文档与 `v0.1.0` Release；General 注册 PR #175351 待人工合并**（`change: pikit-julia-port`）。
-- **二期 v0.2–v0.4**：未开始（2A–2D）。
+- **二期 v0.2–v0.4**：规划已建档，未编码（2A `phase2a-package-split`；2B `phase2b-durable-runtime`；2C `phase2c-ai-providers`；2D `phase2d-schema-mcp-telemetry`）。
 - **三期 v0.5–v1.0**：未开始（3A–3E）。
 - **改进记录门禁**：一期 M8 `--phase 1 --strict`；二期各子阶段收口 `--phase 2 --strict`；三期 v1.0 `--all --strict`。
 
@@ -143,15 +143,15 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 | **M3 循环** | agent_core/types、loop、agent：hook、并行工具、队列、listener、失败兜底 | faux 序列/并行顺序/steering/finish_turn；`abort!` 200ms 内 `agent_end` | M1、M2(faux) |
 | **M4 工具** | truncate、path_utils、shell_env、tools_manager（rg/fd）、read、bash、powershell、edit、write、mutation queue、grep/find/ls、details/operations、registry | W3 工具验收全过（截断文案、timeout、BOM/CRLF、rg/fd 解析与离线、shell/PowerShell 解析、details/operations、同文件串行） | M1 |
 | **M5 会话+E2E** | session（header 校验/尾部修复/`context_edit`/build_context）、system_prompt、runtime、config、print | v3 fixture 往返；compaction+`context_edit` 重建；`-p` faux 端到端 | M3、M4 |
-| **M6 协议模式** | JSON 事件全集、RPC 命令与 `disposition`、REPL、CLI 全量 flag | JSON 快照匹配 `docs/json.md`；RPC 冒烟；REPL 手工 | M5 |
+| **M6 协议模式** | JSON 事件全集、RPC 命令与 `disposition`、REPL、CLI 全量 flag | JSON 快照匹配 `docs/src/json.md`；RPC 冒烟；REPL 手工 | M5 |
 | **M7 压缩与恢复** | compaction（usage 锚点/切点/entry 字段）、溢出恢复、retry 集成 | 阈值压缩、413 溢出重试、配额 429 不重试三条端到端 | M6 |
 | **M8 发布** | docs、README、julia-improvements 检查器、tag、**General 注册** | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 与 `v0.1.0` Release（已完成）；`Pkg.add("PiKit")` 可从注册表安装（PR #175351 待人工合并）；真实 Provider 手工冒烟 | M7 |
 
 ## 依赖关系 / Dependencies
 
 ```text
-HTTP 1.10 + JSON3 1.14
-rg / fd（运行时；tools manager 解析或下载）
+HTTP 1.10 + JSON 1.13 + ripgrep_jll 15.2
+ripgrep_jll（grep）；fd_jll（find；待 Yggdrasil）
   └── 一期 PiKit（AI/AgentCore/CodingAgent 三模块）
         └── 2A 拆包 ──> PiAI / PiAgentCore / PiCodingAgent
                           ├── 2B PiDurable
@@ -165,7 +165,7 @@ rg / fd（运行时；tools manager 解析或下载）
 - 事件/消息 wire 形状、会话 v3 基线字段、RPC 帧、工具结果结构稳定；新增能力只加字段/加事件，不改既有含义。
 - 会话读取永远向后兼容：未知 entry 保留、未知字段进 `extra`。
 - Provider 通过注册表扩展，核心不新增 switch 分支。
-- 每次同步上游后更新 `docs/upstream-compat.md`（当前验证基线与差异表）；README/NOTICE/脚本不承担永久 pin 语义；偏差只减不增。
+- 每次同步上游后更新 `docs/src/upstream-compat.md`（当前验证基线与差异表）；README/NOTICE/脚本不承担永久 pin 语义；偏差只减不增。
 - 0.x 期间允许破坏性变更，但必须附迁移说明；v1.0 起冻结。
 
 ## 待决决策 / Decisions Pending

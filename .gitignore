@@ -8,3 +8,7 @@ changes/
 .upstream/
 .pikit/
 *.cov
+
+# Documenter build output
+docs/build/
+docs/Manifest.toml

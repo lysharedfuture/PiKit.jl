@@ -27,7 +27,7 @@ ahead of the tag; the commit is authoritative for reproduction.
 | `anthropic-messages` provider | ported (HTTP SSE) | `test/ai/anthropic.jl` |
 | `faux` provider | ported | `test/ai/faux.jl` |
 | Agent loop, hooks, parallel tools, queues, abort, listeners | ported | `test/agent_core/*` |
-| `read/bash/powershell/edit/write/grep/find/ls` | ported | `test/coding/*` |
+| `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`; `find` fd_jll pending) | `test/coding/*` |
 | Session v3 read/write/fork, unknown entries, `context_edit: null` | ported | `test/coding/session.jl` |
 | Compaction and overflow recovery | ported subset | `test/coding/compaction.jl` |
 | print/JSON/RPC/REPL modes | ported | `test/coding/json_rpc.jl`, `test/coding/json_mode.jl` |
@@ -70,7 +70,7 @@ ahead of the tag; the commit is authoritative for reproduction.
    julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream
    ```
 
-5. Update the table above, `docs/julia-improvements.md`, and the PiKit version
+5. Update the table above, `docs/src/julia-improvements.md`, and the PiKit version
    if behavior or compatibility changed.
 6. Commit, tag, and release PiKit on its own semantic version; do not rewrite
    historical change records that mention older upstream baselines.

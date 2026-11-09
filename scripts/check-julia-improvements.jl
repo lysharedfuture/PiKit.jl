@@ -1,10 +1,10 @@
 #!/usr/bin/env julia
-# Check docs/julia-improvements.md against the required topics table in
+# Check docs/src/julia-improvements.md against the required topics table in
 # specs/development-process/spec.md.
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 const SPEC = joinpath(ROOT, "specs", "development-process", "spec.md")
-const DOCS = joinpath(ROOT, "docs", "julia-improvements.md")
+const DOCS = joinpath(ROOT, "docs", "src", "julia-improvements.md")
 const FIELDS = ["上游", "观察", "Julia 方案", "结论"]
 const CONCLUSIONS = ["采纳", "建议上游", "Julia 生态缺口"]
 

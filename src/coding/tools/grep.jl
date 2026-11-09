@@ -28,8 +28,9 @@ function run_capture(cmd::Cmd)
     return (stdout=String(take!(out)), stderr=String(take!(err)), exit_code=process.exitcode)
 end
 
-function default_grep_run(rg_path, args)
-    return run_capture(Cmd(vcat([rg_path], args)))
+function default_grep_run(rg_cmd, args)
+    cmd = rg_cmd isa Cmd ? Cmd(vcat(rg_cmd.exec, args)) : Cmd(vcat([rg_cmd], args))
+    return run_capture(cmd)
 end
 
 const DEFAULT_GREP_OPERATIONS = GrepOperations(
@@ -51,12 +52,7 @@ function grep_tool(cwd::String; operations::GrepOperations=DEFAULT_GREP_OPERATIO
         literal = Bool(get(args, "literal", false))
         context_value = max(0, Int(floor(Float64(get(args, "context", 0)))))
         effective_limit = max(1, Int(floor(Float64(get(args, "limit", 100)))))
-        rg = try
-            ensure_tool("rg"; agent_dir=agent_dir)
-        catch err
-            return AgentCore.ToolResult(AbstractContent[TextContent(
-                "ripgrep (rg) is not available and could not be downloaded: $(sprint(showerror, err))")]; is_error=true)
-        end
+        rg = ripgrep_jll.rg()
         rg_args = String["--no-config", "--json", "--line-number", "--color=never", "--hidden"]
         ignore_case && push!(rg_args, "--ignore-case")
         literal && push!(rg_args, "--fixed-strings")

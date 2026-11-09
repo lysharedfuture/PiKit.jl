@@ -23,5 +23,26 @@ jobs:
       - name: Test
         env:
           PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent
-          PIKIT_OFFLINE: '1'
         run: julia --project=. -e 'using Pkg; Pkg.test()'
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.13'
+      - uses: julia-actions/cache@v2
+      - name: Instantiate
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+      - name: Test with coverage
+        env:
+          PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent-coverage
+        run: julia --project=. -e 'using Pkg; Pkg.test(; coverage=true)'
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: src
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: lcov.info

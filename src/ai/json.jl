@@ -4,20 +4,18 @@ plain(::Nothing) = nothing
 plain(x::Number) = x
 plain(x::Bool) = x
 plain(x::AbstractString) = String(x)
-plain(x::JSON3.Array) = Any[plain(v) for v in x]
-plain(x::JSON3.Object) = Dict{String,Any}(String(k) => plain(v) for (k, v) in pairs(x))
 plain(x::AbstractDict) = Dict{String,Any}(String(k) => plain(v) for (k, v) in x)
 plain(x::AbstractVector) = Any[plain(v) for v in x]
 plain(x) = x
 
-function ordered_plain(x::JSON3.Object)
+function ordered_plain(x::JSON.Object)
     return Dict{String,Any}(String(k) => (String(k) == "sections" ? sections_plain(v) : plain(v)) for (k, v) in pairs(x))
 end
 ordered_plain(x) = plain(x)
 
 function sections_plain(v)
     v === nothing && return nothing
-    if v isa JSON3.Object
+    if v isa JSON.Object
         return Pair{String,Union{String,Nothing}}[
             String(k) => (val === nothing ? nothing : String(val)) for (k, val) in pairs(v)
         ]
@@ -29,7 +27,7 @@ function sections_plain(v)
     return nothing
 end
 
-json_parse(s::AbstractString) = ordered_plain(JSON3.read(s))
+json_parse(s::AbstractString) = ordered_plain(JSON.parse(s))
 
 function _json_write(io::IO, x)
     if x isa AbstractDict
@@ -38,7 +36,7 @@ function _json_write(io::IO, x)
         for (k, v) in x
             first || print(io, ',')
             first = false
-            JSON3.write(io, String(k))
+            print(io, JSON.json(String(k)))
             print(io, ':')
             _json_write(io, v)
         end
@@ -49,7 +47,7 @@ function _json_write(io::IO, x)
         for (k, v) in x
             first || print(io, ',')
             first = false
-            JSON3.write(io, String(k))
+            print(io, JSON.json(String(k)))
             print(io, ':')
             _json_write(io, v)
         end
@@ -62,7 +60,7 @@ function _json_write(io::IO, x)
         end
         print(io, ']')
     else
-        JSON3.write(io, x)
+        print(io, JSON.json(x))
     end
 end
 

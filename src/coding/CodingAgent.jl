@@ -7,6 +7,7 @@ using UUIDs
 using Base64
 using Unicode
 using HTTP
+using ripgrep_jll
 using ..AI
 using ..AI: plain
 using ..AgentCore
