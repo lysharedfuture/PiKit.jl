@@ -1,6 +1,6 @@
-# RULES — PiKit 日志硬纪律
+# RULES — PiKit 开发纪律
 
-> 本文件只约束日志。shell/git/提交/编辑纪律不在本文件范围。
+> 本文件约束 PiKit 的开发纪律。各一级章节相互独立；目前包括发布 tag 与日志，后续新增纪律追加同级章节。
 
 ## 发布 tag
 
@@ -9,7 +9,9 @@
 - 注册合并后等待 `JuliaTagBot` 创建 tag 与 Release；TagBot workflow 见 `.github/workflows/TagBot.yml`。
 - 重新发布已注册版本前，先删除旧 tag/Release，再在最终 commit 上重新触发 `@JuliaRegistrator register`，让 TagBot 按 registry tree 重建 tag。
 
-## 文件标识（TAG）
+## 日志硬纪律
+
+### 文件标识（TAG）
 
 - 每个含日志的 Julia 源文件顶部（模块与 `using` 之后）声明：
   `const LOG_TAG = "<文件名去扩展名>"`。
@@ -17,7 +19,7 @@
 - 禁止中文 tag、无 tag、用模块名/函数名/类名代替。
 - tag 必须与文件路径唯一对应；重命名文件时同步修改。
 
-## 调用形式
+### 调用形式
 
 - 统一使用 stdlib `Logging`：
   - `@info "message" _group=LOG_TAG key=value`
@@ -28,7 +30,7 @@
 - 日志文本用英文；结构化信息优先放键值，不拼字符串。
 - 禁止用 `println` / `@printf` 当日志；JSON/RPC 的 stdout 只属于协议。
 
-## 级别
+### 级别
 
 - `info`：状态切换与关键动作（启动、模型选择、会话创建/恢复、压缩开始/结束、工具注册、模式切换）。
 - `warn`：可恢复异常（Provider 回退、重试、权限异常、截断）。
@@ -36,7 +38,7 @@
 - `debug`：高频/调试路径（逐 delta、SSE 行、参数归一细节）。
 - 默认 `info`；`debug` 默认关闭。
 
-## 输出与过滤（方案 C）
+### 输出与过滤（方案 C）
 
 - 默认只写文件：`~/.pikit/agent/logs/app.log`。
 - 路径优先级：`PIKIT_LOG_FILE` > `PIKIT_AGENT_DIR` > `~/.pikit/agent`。
@@ -46,19 +48,19 @@
 - JSON/RPC 的 stdout 只写协议；日志不得进入 stdout。
 - 文件 sink 追加写，进程内加锁；不重复打开文件。
 
-## 错误不静默
+### 错误不静默
 
 - 禁止裸 `catch`、`catch; nothing`、`try ... catch; end`。
 - 预期缺失用显式分支（`ispath`、`=== nothing`）并 `@debug`。
 - 重试前 `@warn`；最终失败 `@error`。
 
-## 脱敏
+### 脱敏
 
 - `info/warn/error` 禁止记录 `Authorization`、`x-api-key`、API key、完整请求体。
 - `debug` 记录 payload 前必须脱敏。
 - 错误消息保留状态码与端点，不保留凭据。
 
-## 测试
+### 测试
 
 - 测试用 `mktempdir()` / `PIKIT_AGENT_DIR`，不得写真实 `~/.pikit`。
 - 用 `Logging.with_logger` 或临时文件捕获；断言 tag、级别与文件内容。
