@@ -12,6 +12,7 @@ makedocs(
         "Sessions" => "sessions.md",
         "Upstream compatibility" => "upstream-compat.md",
         "Julia improvements" => "julia-improvements.md",
+        "Documenter deployment" => "documenter-deploy.md",
     ],
     checkdocs = :none,
 )
