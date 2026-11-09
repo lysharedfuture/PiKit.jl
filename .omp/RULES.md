@@ -9,6 +9,26 @@
 - 注册合并后等待 `JuliaTagBot` 创建 tag 与 Release；TagBot workflow 见 `.github/workflows/TagBot.yml`。
 - 重新发布已注册版本前，先删除旧 tag/Release，再在最终 commit 上重新触发 `@JuliaRegistrator register`，让 TagBot 按 registry tree 重建 tag。
 
+### Release notes
+
+- 每次调用 Registrator 时，`@JuliaRegistrator register` 评论 MUST 在同一评论内包含 `Release notes:` 段落。
+- 格式：
+
+  ```text
+  @JuliaRegistrator register
+
+  Release notes:
+
+  ## Changes
+  - ...
+  ```
+
+- 新版本 MUST 写用户可见变化；破坏性变更 MUST 单独列出并说明影响。
+- 首次发布写 `Initial release ...`；后续版本按 `Added / Changed / Fixed / Breaking` 组织。
+- Release notes MUST 与触发评论在同一条消息内，不得另发评论后补；否则 Registrator 不会关联。
+- 修改 notes 后重新触发同一版本，注册 PR 会更新。
+- TagBot 会把同一段 notes 写入 GitHub Release。
+
 ## 日志硬纪律
 
 ### 文件标识（TAG）
@@ -45,7 +65,7 @@
 - `debug`：高频/调试路径（逐 delta、SSE 行、参数归一细节）。
 - 默认 `info`；`debug` 默认关闭。
 
-### 输出与过滤（方案 C）
+### 输出与过滤
 
 - 默认只写文件：`~/.pikit/agent/logs/app.log`。
 - 路径优先级：`PIKIT_LOG_FILE` > `PIKIT_AGENT_DIR` > `~/.pikit/agent`。
