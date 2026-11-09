@@ -2,6 +2,13 @@
 
 > 本文件只约束日志。shell/git/提交/编辑纪律不在本文件范围。
 
+## 发布 tag
+
+- 所有发布 tag（包括 `v0.1.0`、`v0.1.1` 及后续版本）MUST 由 TagBot 创建。
+- 禁止手工 `git tag`、`gh release create` 或推送 release tag。
+- 注册合并后等待 `JuliaTagBot` 创建 tag 与 Release；TagBot workflow 见 `.github/workflows/TagBot.yml`。
+- 重新发布已注册版本前，先删除旧 tag/Release，再在最终 commit 上重新触发 `@JuliaRegistrator register`，让 TagBot 按 registry tree 重建 tag。
+
 ## 文件标识（TAG）
 
 - 每个含日志的 Julia 源文件顶部（模块与 `using` 之后）声明：
