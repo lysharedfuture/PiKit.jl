@@ -1,6 +1,15 @@
 # RULES — PiKit 开发纪律
 
-> 本文件约束 PiKit 的开发纪律。各一级章节相互独立；目前包括发布 tag 与日志，后续新增纪律追加同级章节。
+> 本文件约束 PiKit 的开发纪律。各一级章节相互独立；目前包括 GitHub 提交与发布、发布 tag、日志，后续新增纪律追加同级章节。
+
+## GitHub 提交与发布
+
+- 向 GitHub 推送代码、创建/更新 PR、创建 tag、创建 Release、触发 General 注册或文档部署前，MUST 先获得用户明确确认。
+- 本地 `git commit`、构建、测试和文档本地构建不需要确认。
+- 确认必须明确目标：仓库、分支、commit、版本号；不得以历史对话中的“继续”视为永久授权。
+- 未经确认，禁止执行 `git push`、`gh pr create`、`gh pr edit`、`gh release create`、`gh release edit`、tag 推送或 Registrator 触发评论。
+- 推送失败或部分成功时，MUST 报告实际远端状态，不得静默重试或改变目标。
+- tag 与 Release 仍须遵守下一节的 TagBot 规则。
 
 ## 发布 tag
 
