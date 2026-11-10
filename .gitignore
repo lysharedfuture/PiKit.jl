@@ -12,3 +12,6 @@ changes/
 # Documenter build output
 docs/build/
 docs/Manifest.toml
+
+# Local-only deployment notes
+docs/src/documenter-deploy.md
