@@ -1,18 +1,15 @@
 @testset "grep/find/ls" begin
     td = mktempdir()
-    agent_dir = mktempdir()
-    bindir = joinpath(agent_dir, "bin")
-    mkpath(bindir)
     target = joinpath(td, "a.txt")
     write(target, "hello\nworld\nhello again\n")
-    rg = joinpath(bindir, "rg")
-    json_lines = [
-        "{\"type\":\"match\",\"data\":{\"path\":{\"text\":\"$(target)\"},\"line_number\":1,\"lines\":{\"text\":\"hello\\n\"}}}",
-        "{\"type\":\"match\",\"data\":{\"path\":{\"text\":\"$(target)\"},\"line_number\":3,\"lines\":{\"text\":\"hello again\\n\"}}}",
-    ]
-    write(rg, "#!/bin/sh\nprintf '%s\\n' " * join(["'" * replace(l, "'" => "'\\''") * "'" for l in json_lines], " ") * "\n")
-    chmod(rg, 0o755)
-    gt = CA.grep_tool(td; agent_dir=agent_dir)
+    write(joinpath(td, "b.txt"), "beta\n")
+
+    # both external tools come from JLL artifacts, not from the host PATH
+    @test isfile(first(fd_jll.fd_executable().exec))
+    @test success(`$(fd_jll.fd_executable()) --version`)
+    @test success(`$(ripgrep_jll.rg()) --version`)
+
+    gt = CA.grep_tool(td)
     r = gt.execute("id", Dict{String,Any}("pattern" => "hello"), nothing, nothing)
     @test !r.is_error
     @test occursin("a.txt:1: hello", r.content[1].text)
@@ -22,15 +19,22 @@
     @test occursin("1 matches limit reached", r2.content[1].text)
     @test r2.details["matchLimitReached"] == 1
 
-    fd = joinpath(bindir, "fd")
-    write(fd, "#!/bin/sh\nprintf '%s\\n' '$(joinpath(td, "a.txt"))' '$(joinpath(td, "b.txt"))'\n")
-    chmod(fd, 0o755)
-    ft = CA.find_tool(td; agent_dir=agent_dir)
+    ft = CA.find_tool(td)
     fr = ft.execute("id", Dict{String,Any}("pattern" => "*.txt", "limit" => 1), nothing, nothing)
     @test !fr.is_error
-    @test occursin("a.txt", fr.content[1].text)
     @test occursin("1 results limit reached", fr.content[1].text)
     @test fr.details["resultLimitReached"] == 1
+
+    full = ft.execute("id", Dict{String,Any}("pattern" => "*.txt"), nothing, nothing)
+    @test !full.is_error
+    @test occursin("a.txt", full.content[1].text)
+    @test occursin("b.txt", full.content[1].text)
+
+    withenv("PATH" => mktempdir()) do
+        jll = ft.execute("id", Dict{String,Any}("pattern" => "*.txt"), nothing, nothing)
+        @test !jll.is_error
+        @test occursin("a.txt", jll.content[1].text)
+    end
 
     mkdir(joinpath(td, "dir"))
     write(joinpath(td, "z.txt"), "z")

@@ -40,6 +40,8 @@ implementation. Requires Julia 1.13+.
   `julia -m PiKit`).
 - CLI helpers (`parse_cli`, `CLIOptions`, `HELP_TEXT`, `run_*_mode`,
   `build_runtime`, …) are exported by `PiKit`, not `PiCodingAgent`.
+- `find` now ships fd via `fd_jll`; the runtime download path, the `--offline`
+  flag and `PIKIT_OFFLINE` were removed.
 - In scripts, prefer `import PiKit`. Julia runs a package's `@main` entry point
   when the package is `using`-loaded by a script, so `using PiKit` at the end of
   a script would execute the CLI with that script's arguments.

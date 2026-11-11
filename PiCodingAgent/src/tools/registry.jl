@@ -27,8 +27,7 @@ const TOOL_GUIDELINES = Dict{String,Vector{String}}(
 )
 
 function create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
-                     agent_dir=default_agent_dir(), shell_path=nothing,
-                     env::Union{Nothing,Dict{String,String}}=nothing)
+                     shell_path=nothing, env::Union{Nothing,Dict{String,String}}=nothing)
     supports_images = model === nothing || ("image" in model.input)
     n = String(name)
     if n == "read"
@@ -40,9 +39,9 @@ function create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
     elseif n == "write"
         return write_tool(String(cwd))
     elseif n == "grep"
-        return grep_tool(String(cwd); agent_dir=agent_dir)
+        return grep_tool(String(cwd))
     elseif n == "find"
-        return find_tool(String(cwd); agent_dir=agent_dir)
+        return find_tool(String(cwd))
     elseif n == "ls"
         return ls_tool(String(cwd))
     elseif n == "powershell"
@@ -52,8 +51,8 @@ function create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
 end
 
 function create_tools(cwd::AbstractString; names=DEFAULT_TOOL_NAMES, model=nothing,
-                      agent_dir=default_agent_dir(), shell_path=nothing,
+                      shell_path=nothing,
                       env::Union{Nothing,Dict{String,String}}=nothing)
-    return PiAgentCore.Tool[create_tool(n, cwd; model=model, agent_dir=agent_dir,
+    return PiAgentCore.Tool[create_tool(n, cwd; model=model,
                                       shell_path=shell_path, env=env) for n in names]
 end

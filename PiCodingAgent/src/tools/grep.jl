@@ -38,8 +38,7 @@ const DEFAULT_GREP_OPERATIONS = GrepOperations(
     default_grep_run,
 )
 
-function grep_tool(cwd::String; operations::GrepOperations=DEFAULT_GREP_OPERATIONS,
-                   agent_dir=default_agent_dir())
+function grep_tool(cwd::String; operations::GrepOperations=DEFAULT_GREP_OPERATIONS)
     execute = function (id, args, signal, on_update)
         pattern = String(args["pattern"])
         search_dir = get(args, "path", nothing)

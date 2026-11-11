@@ -26,8 +26,7 @@ function _inside_git_repo(path::String)
     end
 end
 
-function fd_glob(pattern::String, search_path::String, limit::Int; agent_dir=default_agent_dir())
-    fd = ensure_tool("fd"; agent_dir=agent_dir)
+function fd_glob(pattern::String, search_path::String, limit::Int)
     args = String["--glob", "--color=never", "--hidden"]
     _inside_git_repo(search_path) || push!(args, "--no-require-git")
     append!(args, ["--max-results", string(max(limit, 1))])
@@ -40,7 +39,7 @@ function fd_glob(pattern::String, search_path::String, limit::Int; agent_dir=def
         Sys.iswindows() && (effective_pattern = replace(effective_pattern, "/" => "[/\\\\]"))
     end
     append!(args, ["--", effective_pattern, search_path])
-    captured = run_capture(Cmd(vcat([fd], args)))
+    captured = run_capture(`$(fd_jll.fd_executable()) $(args)`)
     if captured.exit_code != 0
         isempty(strip(captured.stderr)) && return String[]
         throw(ErrorException(strip(captured.stderr)))
@@ -58,8 +57,7 @@ function relativize_find_result(result_path::String, search_path::String)
     return had_trailing && !endswith(posix, "/") ? posix * "/" : posix
 end
 
-function find_tool(cwd::String; operations::FindOperations=DEFAULT_FIND_OPERATIONS,
-                   agent_dir=default_agent_dir())
+function find_tool(cwd::String; operations::FindOperations=DEFAULT_FIND_OPERATIONS)
     execute = function (id, args, signal, on_update)
         pattern = String(args["pattern"])
         search_dir = get(args, "path", nothing)
@@ -69,7 +67,7 @@ function find_tool(cwd::String; operations::FindOperations=DEFAULT_FIND_OPERATIO
         effective_limit = max(1, Int(floor(Float64(get(args, "limit", 1000)))))
         results = try
             if operations.glob === DEFAULT_FIND_OPERATIONS.glob
-                fd_glob(pattern, search_path, effective_limit + 1; agent_dir=agent_dir)
+                fd_glob(pattern, search_path, effective_limit + 1)
             else
                 operations.glob(pattern, search_path, effective_limit + 1)
             end

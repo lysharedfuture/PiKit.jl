@@ -29,7 +29,6 @@ Base.@kwdef mutable struct CLIOptions
     append_system_prompt::Vector{String} = String[]
     no_context_files::Bool = false
     approve::Union{Nothing,Bool} = nothing
-    offline::Bool = false
     list_models::Union{Nothing,String} = nothing
     version::Bool = false
     help::Bool = false
@@ -103,8 +102,6 @@ function _assign_option!(opts::CLIOptions, arg::String, args, i)
         opts.approve = true
     elseif arg == "-na" || arg == "--no-approve"
         opts.approve = false
-    elseif arg == "--offline"
-        opts.offline = true
     elseif arg == "--list-models"
         if i < length(args) && !startswith(args[i + 1], "-")
             opts.list_models = args[i + 1]
@@ -222,7 +219,6 @@ Options:
   --no-context-files          Do not load AGENTS.md/CLAUDE.md
   -a, --approve               Trust project settings
   -na, --no-approve           Ignore project settings
-  --offline                   Disable tool downloads
   --list-models [search]      List available models
   -v, --version               Print version
   -h, --help                  Show this help

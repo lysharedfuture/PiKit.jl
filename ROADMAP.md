@@ -33,7 +33,6 @@
 ## 进行中 / In Progress
 
 - **General 注册**：`v0.1.0` 已通过 PR #175351 合并且 TagBot 创建 tag；该版本树早于 freeze commit。freeze commit 以 `0.1.1` patch 重新提交注册，包含 `bin/pikit` 修复与文档更新；`find` 仍等待 `fd_jll`。0.1.1 合并后 2A 从该 tag 开始。
-- 旧 PR #175350 已评论标记为 superseded（作者为 `JuliaRegistrator` bot，仓库账号无关闭权限，等待 General 维护者清理）。
 
 ## 已完成变更 / Completed Changes
 

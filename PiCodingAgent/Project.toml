@@ -13,6 +13,7 @@ PiAgentCore = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+fd_jll = "a19947ed-bb28-5243-b32e-cf3c9f55efba"
 ripgrep_jll = "e10fc14b-37cd-5cbc-b289-ad01b12ebaad"
 
 [sources]
@@ -21,6 +22,7 @@ PiAgentCore = {path = "../PiAgentCore"}
 
 [compat]
 HTTP = "1.10"
+fd_jll = "10.3.0"
 PiAI = "0.2"
 PiAgentCore = "0.2"
 julia = "1.13"
