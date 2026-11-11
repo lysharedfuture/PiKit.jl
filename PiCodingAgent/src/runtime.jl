@@ -92,7 +92,7 @@ function create_agent_session(; cwd::String=pwd(), model::PiAI.Model, session_ma
     env = get_shell_env(model=model.id, session_id=session_manager.header.id,
                         session_file=session_manager.path, provider=model.provider,
                         reasoning=thinking_level, agent_dir=agent_dir)
-    tools = create_tools(cwd; names=tools_names, model=model, agent_dir=agent_dir,
+    tools = create_tools(cwd; names=tools_names, model=model,
                          shell_path=get(settings, "shellPath", nothing), env=env)
     if api_key === nothing
         keys = get(settings, "apiKeys", nothing)

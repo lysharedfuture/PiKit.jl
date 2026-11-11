@@ -41,7 +41,6 @@ function run_child(workdir::String, args::Vector{String}; input::Union{Nothing,S
     env = copy(ENV)
     env["PIKIT_AGENT_DIR"] = tmp
     env["PIKIT_FAUX_RESPONSES"] = fixture
-    env["PIKIT_OFFLINE"] = "1"
     env["JULIA_PKG_OFFLINE"] = "true"
     delete!(env, "PIKIT_LOG")
     delete!(env, "PIKIT_LOG_FILE")
@@ -150,7 +149,6 @@ function log_snapshot(tmp::String)
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$(ROOT) $(script) $(logfile)`
     env = copy(ENV)
     env["PIKIT_AGENT_DIR"] = joinpath(tmp, "log-agent")
-    env["PIKIT_OFFLINE"] = "1"
     delete!(env, "PIKIT_LOG")
     delete!(env, "PIKIT_LOG_FILE")
     delete!(env, "PIKIT_LOG_STDERR")

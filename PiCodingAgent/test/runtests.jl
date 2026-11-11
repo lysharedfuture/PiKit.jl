@@ -3,9 +3,10 @@ using Logging
 
 const TEST_AGENT_DIR = mktempdir()
 ENV["PIKIT_AGENT_DIR"] = TEST_AGENT_DIR
-ENV["PIKIT_OFFLINE"] = "1"
 
 using PiAI
+import fd_jll
+import ripgrep_jll
 using PiAgentCore
 using PiCodingAgent
 
@@ -20,7 +21,6 @@ include("coding/edit.jl")
 include("coding/write.jl")
 include("coding/bash.jl")
 include("coding/shell_env.jl")
-include("coding/tools_manager.jl")
 include("coding/search.jl")
 include("coding/operations.jl")
 include("coding/tool_details.jl")

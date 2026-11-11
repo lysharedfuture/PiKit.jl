@@ -42,7 +42,7 @@ package free of CLI symbols and puts them in `PiKit` (D6).
 | `anthropic-messages` provider | ported (HTTP SSE) | `PiAI/test/ai/anthropic.jl` |
 | `faux` provider | ported | `PiAI/test/ai/faux.jl` |
 | Agent loop, hooks, parallel tools, queues, abort, listeners | ported | `PiAgentCore/test/agent_core/*` |
-| `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`; `find` fd_jll pending) | `PiCodingAgent/test/coding/*` |
+| `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`, find via `fd_jll`) | `PiCodingAgent/test/coding/*` |
 | Session v3 read/write/fork, unknown entries, `context_edit: null` | ported | `PiCodingAgent/test/coding/session.jl` |
 | Compaction and overflow recovery | ported subset | `PiCodingAgent/test/coding/compaction.jl` |
 | print/JSON/RPC/REPL modes | ported | `test/coding/json_rpc.jl`, `test/coding/json_mode.jl` |

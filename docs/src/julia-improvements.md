@@ -80,7 +80,7 @@
 
 - 上游：packages/coding-agent/src/utils/tools-manager.ts:1
 - 观察：grep/find 复用 ripgrep/fd 的 `.gitignore`、隐藏文件与二进制跳过语义；上游通过外部工具路径解析，且新包不应在运行时下载第三方二进制。
-- Julia 方案：`grep` 使用 `ripgrep_jll.rg()`，由 Pkg/Artifacts 提供全平台二进制；`find` 等待 fd_jll（Yggdrasil `F/fd`）后替换现有 fd 下载；在 JLL 可用前保留临时 `ensure_tool` 路径。
+- Julia 方案：`grep` 使用 `ripgrep_jll.rg()`、`find` 使用 `fd_jll.fd_executable()`，全平台二进制由 Pkg/Artifacts 提供；拆分时临时 `ensure_tool` 下载路径在 `fd_jll` 注册后删除，`--offline`/`PIKIT_OFFLINE` 随之退役（`fd_jll 10.3.0+0`）。
 - 结论：采纳
 
 ### W3-03 文本 diff 实现

@@ -3,7 +3,6 @@ using Logging
 
 const TEST_AGENT_DIR = mktempdir()
 ENV["PIKIT_AGENT_DIR"] = TEST_AGENT_DIR
-ENV["PIKIT_OFFLINE"] = "1"
 
 import PiKit
 

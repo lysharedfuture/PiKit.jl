@@ -157,7 +157,7 @@ uuid = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 version = "0.2.0"
 
 [[deps.PiCodingAgent]]
-deps = ["Base64", "Dates", "HTTP", "Logging", "PiAI", "PiAgentCore", "Random", "UUIDs", "Unicode", "ripgrep_jll"]
+deps = ["Base64", "Dates", "HTTP", "Logging", "PiAI", "PiAgentCore", "Random", "UUIDs", "Unicode", "fd_jll", "ripgrep_jll"]
 path = "PiCodingAgent"
 uuid = "0b8fd38c-6e68-41ee-b4d7-56f7890dc08d"
 version = "0.2.0"
@@ -273,6 +273,13 @@ version = "1.11.0"
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 version = "1.3.2+0"
+
+[[deps.fd_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "79f039b5ba7445a9362572175861874a63945445"
+registries = "General"
+uuid = "a19947ed-bb28-5243-b32e-cf3c9f55efba"
+version = "10.3.0+0"
 
 [[deps.ripgrep_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]

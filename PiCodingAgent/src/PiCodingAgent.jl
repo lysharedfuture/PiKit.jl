@@ -8,6 +8,7 @@ using Base64
 using Unicode
 using HTTP
 using ripgrep_jll
+using fd_jll
 using PiAI
 using PiAI: plain
 using PiAgentCore
@@ -18,7 +19,6 @@ include("tools/truncate.jl")
 include("tools/path_utils.jl")
 include("tools/file_mutation_queue.jl")
 include("tools/shell_env.jl")
-include("tools/tools_manager.jl")
 include("tools/read.jl")
 include("tools/write.jl")
 include("tools/edit.jl")
@@ -50,7 +50,7 @@ export AgentSession, create_agent_session, prompt!, continue!, abort!, settle!,
        ReadOperations, GrepOperations, FindOperations, LsOperations, BashOperations,
        PowerShellOperations, DEFAULT_READ_OPERATIONS, DEFAULT_GREP_OPERATIONS,
        DEFAULT_FIND_OPERATIONS, DEFAULT_LS_OPERATIONS, DEFAULT_BASH_OPERATIONS,
-       resolve_to_cwd, resolve_read_path, path_exists, ensure_tool, default_bash_exec,
+       resolve_to_cwd, resolve_read_path, path_exists, default_bash_exec,
        get_shell_config,
        get_powershell_config, get_shell_env, kill_process_tree,
        build_system_sections, build_system_message, estimate_tokens, estimate_context_tokens,

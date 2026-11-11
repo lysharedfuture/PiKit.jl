@@ -50,7 +50,6 @@ TTY starts the REPL; empty prompt without a TTY exits `0`.
 | `--no-context-files` | flag | skip AGENTS/CLAUDE context files |
 | `-a`, `--approve` | flag | trust project `.pikit` settings |
 | `-na`, `--no-approve` | flag | ignore project settings (default) |
-| `--offline` | flag | disable the remaining fd download (temporary until fd_jll) |
 | `--list-models` | optional search | `<provider>/<id>\t<name>` per line |
 | `-v`, `--version` | flag | print version |
 | `-h`, `--help` | flag | print help |
@@ -71,5 +70,4 @@ Authentication order: `--api-key`, `~/.pikit/auth.json`,
 | `PIKIT_LOG` | `info` (default), `debug`, or `tag=level,...` (tags are `ai_*`, `agent_core_*`, `coding_*`, `pikit_*`) |
 | `PIKIT_LOG_FILE` | log file path |
 | `PIKIT_LOG_STDERR` | `1` mirrors logs to stderr |
-| `PIKIT_OFFLINE` | `1` forbids the remaining fd download (temporary until fd_jll) |
 | `PIKIT_FAUX_RESPONSES` | JSON array of scripted faux responses |
