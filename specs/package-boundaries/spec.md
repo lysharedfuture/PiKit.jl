@@ -66,7 +66,7 @@ CLI 入口与模式实现 MUST 只位于 `PiKit`：参数解析、`print`/`json`
 
 子包 MUST 使用标准库 `Logging` 的 `@info`/`@warn`/`@error`/`@debug` 并携带 `_group=LOG_TAG`，MUST NOT 自行安装全局 logger、写 stdout 或假定 `~/.pikit` 存在。`PiKit` MUST 在 `__init__` 中只安装一次文件 sink；单独 `using PiAI` 时 MUST 保留调用方现有 logger 行为。
 
-`LOG_TAG` MUST 为 `<包短名>_<src 内相对路径>`（路径分隔符转 `_`）：`PiAI` → `ai_`、`PiAgentCore` → `agent_core_`、`PiCodingAgent` → `coding_`、`PiKit` → `pikit_`。一期已使用的 `ai_*`/`agent_core_*`/`coding_*` 值 MUST 保持不变。
+`LOG_TAG` MUST 在仓库内唯一，MUST 以所属包短名开头（`PiAI` → `ai_`、`PiAgentCore` → `agent_core_`、`PiCodingAgent` → `coding_`、`PiKit` → `pikit_`），SHOULD 由 `<包短名>_<src 内相对路径>` 派生（路径分隔符转 `_`）。一期已使用的值 MUST 保持不变；新增文件 MUST 遵循派生规则。
 
 #### Scenario: Standalone package leaves logger untouched
 
@@ -81,7 +81,7 @@ CLI 入口与模式实现 MUST 只位于 `PiKit`：参数解析、`print`/`json`
 #### Scenario: Tag names map to source paths
 
 - **WHEN** 检查任一带日志的源文件
-- **THEN** 其 `LOG_TAG` 等于包短名加该文件相对包 `src/` 的路径
+- **THEN** 其 `LOG_TAG` 以所属包短名开头，且在全仓库中出现一次
 
 ### Requirement: Independent tests and behavioral snapshot
 
