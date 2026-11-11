@@ -3,10 +3,10 @@ const LOG_TAG = "pikit_cli_modes_repl"
 function _repl_print_stream(ev)
     if ev isa PiAgentCore.MessageUpdateEvent
         inner = ev.assistant_message_event
-        if inner isa PiAI.TextDeltaEvent
+        if inner isa PiAISDK.TextDeltaEvent
             print(stdout, inner.delta)
             flush(stdout)
-        elseif inner isa PiAI.ThinkingDeltaEvent
+        elseif inner isa PiAISDK.ThinkingDeltaEvent
             if is_tty(stdout)
                 print(stdout, "\e[2m", inner.delta, "\e[0m")
             else
@@ -21,7 +21,7 @@ function _repl_print_stream(ev)
     elseif ev isa PiAgentCore.ToolExecutionEndEvent
         status = ev.is_error ? "error" : "ok"
         println(stdout, "[tool] $(ev.tool_name) $(status) $(ev.duration_ms)ms")
-    elseif ev isa PiAgentCore.MessageEndEvent && ev.message isa PiAI.AssistantMessage
+    elseif ev isa PiAgentCore.MessageEndEvent && ev.message isa PiAISDK.AssistantMessage
         println(stdout)
     end
     return nothing
@@ -59,7 +59,7 @@ function _repl_resume!(s::AgentSession)
     println("Resumed $(basename(sessions[idx]))")
 end
 
-function run_repl_mode(s::AgentSession; initial_prompt::String="", images=PiAI.ImageContent[])
+function run_repl_mode(s::AgentSession; initial_prompt::String="", images=PiAISDK.ImageContent[])
     unsubscribe = subscribe(s, _repl_print_stream)
     try
         if !isempty(initial_prompt) || !isempty(images)

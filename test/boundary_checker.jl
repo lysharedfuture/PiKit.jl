@@ -3,7 +3,7 @@
 
     manifest(name, deps=String[]) = """
     name = "$(name)"
-    uuid = "$(name == "PiAI" ? "9de19040-de4d-4d6c-8f46-3781ce430fcc" :
+    uuid = "$(name == "PiAISDK" ? "9de19040-de4d-4d6c-8f46-3781ce430fcc" :
              name == "PiAgentCore" ? "d1542b5d-b113-412f-adf4-78ec6fbb7806" :
              name == "PiCodingAgent" ? "0b8fd38c-6e68-41ee-b4d7-56f7890dc08d" :
              "31a94650-92d9-47a7-b751-fcb2edf0c25a")"
@@ -13,13 +13,13 @@
 
     function make_tree(dir)
         for (name, deps, source) in [
-            ("PiAI", ["Logging"], "module PiAI\nusing Logging\nexport f\nf() = 1\nend\n"),
-            ("PiAgentCore", ["PiAI", "Logging"],
-             "module PiAgentCore\nusing PiAI\nusing Logging\nexport g\ng() = PiAI.f()\nend\n"),
-            ("PiCodingAgent", ["PiAI", "PiAgentCore"],
-             "module PiCodingAgent\nusing PiAI\nusing PiAgentCore\nexport h\nh() = PiAgentCore.g()\nend\n"),
-            ("PiKit", ["PiAI", "PiAgentCore", "PiCodingAgent"],
-             "module PiKit\nimport PiAI\nimport PiAgentCore\nimport PiCodingAgent\nexport main\nmain() = 0\nend\n"),
+            ("PiAISDK", ["Logging"], "module PiAISDK\nusing Logging\nexport f\nf() = 1\nend\n"),
+            ("PiAgentCore", ["PiAISDK", "Logging"],
+             "module PiAgentCore\nusing PiAISDK\nusing Logging\nexport g\ng() = PiAISDK.f()\nend\n"),
+            ("PiCodingAgent", ["PiAISDK", "PiAgentCore"],
+             "module PiCodingAgent\nusing PiAISDK\nusing PiAgentCore\nexport h\nh() = PiAgentCore.g()\nend\n"),
+            ("PiKit", ["PiAISDK", "PiAgentCore", "PiCodingAgent"],
+             "module PiKit\nimport PiAISDK\nimport PiAgentCore\nimport PiCodingAgent\nexport main\nmain() = 0\nend\n"),
         ]
             root = name == "PiKit" ? dir : joinpath(dir, name)
             mkpath(joinpath(root, "src"))
@@ -42,22 +42,22 @@
     @test code == 0
 
     # reverse dependency is rejected
-    write(joinpath(dir, "PiAI", "src", "bad.jl"), "using PiKit\n")
+    write(joinpath(dir, "PiAISDK", "src", "bad.jl"), "using PiKit\n")
     code, _, err = run_check(dir)
     @test code != 0
-    @test occursin("PiAI/src/bad.jl", err)
+    @test occursin("PiAISDK/src/bad.jl", err)
     @test occursin("PiKit", err)
-    rm(joinpath(dir, "PiAI", "src", "bad.jl"))
+    rm(joinpath(dir, "PiAISDK", "src", "bad.jl"))
 
     # relative module import is rejected
-    write(joinpath(dir, "PiAI", "src", "rel.jl"), "using ..PiAgentCore\n")
+    write(joinpath(dir, "PiAISDK", "src", "rel.jl"), "using ..PiAgentCore\n")
     code, _, err = run_check(dir)
     @test code != 0
     @test occursin("relative module import", err)
-    rm(joinpath(dir, "PiAI", "src", "rel.jl"))
+    rm(joinpath(dir, "PiAISDK", "src", "rel.jl"))
 
     # cross-package include is rejected
-    write(joinpath(dir, "PiCodingAgent", "src", "inc.jl"), "include(\"../../PiAI/src/PiAI.jl\")\n")
+    write(joinpath(dir, "PiCodingAgent", "src", "inc.jl"), "include(\"../../PiAISDK/src/PiAISDK.jl\")\n")
     code, _, err = run_check(dir)
     @test code != 0
     @test occursin("include escapes package src", err)
@@ -82,11 +82,11 @@
     version = "0.2.0"
 
     [deps]
-    PiAI = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
+    PiAISDK = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
     Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
     [sources]
-    PiAI = {path = "/abs/PiAI"}
+    PiAISDK = {path = "/abs/PiAISDK"}
     """)
     code, _, err = run_check(dir)
     @test code != 0

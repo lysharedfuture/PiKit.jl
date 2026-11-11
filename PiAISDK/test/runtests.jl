@@ -5,9 +5,9 @@ const TEST_AGENT_DIR = mktempdir()
 ENV["PIKIT_AGENT_DIR"] = TEST_AGENT_DIR
 ENV["PIKIT_OFFLINE"] = "1"
 
-using PiAI
+using PiAISDK
 
-const AI = PiAI
+const AI = PiAISDK
 
 include("mock/server.jl")
 include("ai/json_codec.jl")

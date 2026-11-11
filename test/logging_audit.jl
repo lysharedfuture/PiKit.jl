@@ -1,6 +1,6 @@
 @testset "logging audit" begin
     root = dirname(@__DIR__)
-    roots = [joinpath(root, "src"), joinpath(root, "PiAI", "src"),
+    roots = [joinpath(root, "src"), joinpath(root, "PiAISDK", "src"),
              joinpath(root, "PiAgentCore", "src"), joinpath(root, "PiCodingAgent", "src")]
     tagged = String[]
     bare_catch = String[]
@@ -36,7 +36,7 @@
             "agent_core_"
         elseif startswith(rel, "PiCodingAgent/")
             "coding_"
-        elseif startswith(rel, "PiAI/")
+        elseif startswith(rel, "PiAISDK/")
             "ai_"
         else
             "pikit_"
@@ -58,7 +58,7 @@
     end
 
     # only PiKit installs the global logger; subpackages must stay silent
-    for pkg in ("PiAI", "PiAgentCore", "PiCodingAgent")
+    for pkg in ("PiAISDK", "PiAgentCore", "PiCodingAgent")
         for (dir, _, files) in walkdir(joinpath(root, pkg, "src"))
             for f in files
                 endswith(f, ".jl") || continue

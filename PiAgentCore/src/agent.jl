@@ -1,10 +1,10 @@
 const LOG_TAG = "agent_core_agent"
 
 mutable struct PendingQueue
-    messages::Vector{PiAI.AbstractMessage}
+    messages::Vector{PiAISDK.AbstractMessage}
     mode::Symbol
 end
-PendingQueue(; mode=:one_at_a_time) = PendingQueue(PiAI.AbstractMessage[], mode)
+PendingQueue(; mode=:one_at_a_time) = PendingQueue(PiAISDK.AbstractMessage[], mode)
 
 function enqueue!(q::PendingQueue, msg)
     push!(q.messages, msg)
@@ -12,13 +12,13 @@ function enqueue!(q::PendingQueue, msg)
 end
 
 function dequeue!(q::PendingQueue)
-    isempty(q.messages) && return PiAI.AbstractMessage[]
+    isempty(q.messages) && return PiAISDK.AbstractMessage[]
     if q.mode == :all
         out = copy(q.messages)
         empty!(q.messages)
         return out
     end
-    return PiAI.AbstractMessage[popfirst!(q.messages)]
+    return PiAISDK.AbstractMessage[popfirst!(q.messages)]
 end
 
 function clear!(q::PendingQueue)
@@ -27,12 +27,12 @@ function clear!(q::PendingQueue)
 end
 
 mutable struct AgentState
-    messages::Vector{PiAI.AbstractMessage}
+    messages::Vector{PiAISDK.AbstractMessage}
     tools::Vector{Tool}
-    model::PiAI.Model
+    model::PiAISDK.Model
     thinking_level::String
     is_streaming::Bool
-    streaming_message::Union{Nothing,PiAI.AbstractMessage}
+    streaming_message::Union{Nothing,PiAISDK.AbstractMessage}
     pending_tool_calls::Set{String}
     error_message::Union{Nothing,String}
 end
@@ -43,7 +43,7 @@ mutable struct Agent
     steering::PendingQueue
     follow_up::PendingQueue
     active_task::Union{Nothing,Task}
-    signal::Union{Nothing,PiAI.AbortToken}
+    signal::Union{Nothing,PiAISDK.AbortToken}
     tool_execution::Symbol
     session_id::Union{Nothing,String}
     convert_to_llm::Function
@@ -57,17 +57,17 @@ mutable struct Agent
     lock::ReentrantLock
 end
 
-function Agent(; model=PiAI.Model("unconfigured"), tools=Tool[], messages=PiAI.AbstractMessage[],
+function Agent(; model=PiAISDK.Model("unconfigured"), tools=Tool[], messages=PiAISDK.AbstractMessage[],
                system_prompt=nothing, sections=nothing, thinking_level="off",
                tool_execution=:parallel, session_id=nothing, convert_to_llm=default_convert_to_llm,
                transform_context=nothing, get_api_key=nothing, finish_turn=nothing,
                prepare_request=nothing, prepare_next_turn=nothing, before_tool_call=nothing,
                after_tool_call=nothing)
-    msgs = PiAI.AbstractMessage[messages...]
+    msgs = PiAISDK.AbstractMessage[messages...]
     tool_list = Tool[tools...]
-    if isempty(msgs) || !(msgs[1] isa PiAI.SystemMessage)
+    if isempty(msgs) || !(msgs[1] isa PiAISDK.SystemMessage)
         if system_prompt !== nothing || !isempty(tool_list) || sections !== nothing
-            sys = PiAI.SystemMessage(something(system_prompt, "");
+            sys = PiAISDK.SystemMessage(something(system_prompt, "");
                 sections=sections,
                 tools_added=[Dict{String,Any}("name" => t.name, "description" => t.description,
                                               "parameters" => t.parameters) for t in tool_list])
@@ -85,12 +85,12 @@ end
 function system_prompt(agent::Agent)
     parts = String[]
     for m in agent.state.messages
-        if m isa PiAI.SystemMessage
+        if m isa PiAISDK.SystemMessage
             if m.content isa AbstractString
                 isempty(m.content) || push!(parts, m.content)
             else
                 for c in m.content
-                    c isa PiAI.TextContent && push!(parts, c.text)
+                    c isa PiAISDK.TextContent && push!(parts, c.text)
                 end
             end
             if m.sections !== nothing
@@ -129,13 +129,13 @@ function process_event!(agent::Agent, ev)
         state.is_streaming = true
         state.error_message = nothing
     elseif ev isa MessageStartEvent
-        if ev.message isa PiAI.AssistantMessage
+        if ev.message isa PiAISDK.AssistantMessage
             state.streaming_message = ev.message
         end
     elseif ev isa MessageUpdateEvent
         state.streaming_message = ev.message
     elseif ev isa MessageEndEvent
-        if ev.message isa PiAI.AssistantMessage
+        if ev.message isa PiAISDK.AssistantMessage
             state.streaming_message = nothing
             if ev.message.stop_reason == "error" || ev.message.stop_reason == "aborted"
                 state.error_message = something(ev.message.error_message, "Request $(ev.message.stop_reason)")
@@ -169,7 +169,7 @@ end
 function _build_config(agent::Agent)
     return AgentLoopConfig(
         model=agent.state.model,
-        stream_fn=PiAI.stream,
+        stream_fn=PiAISDK.stream,
         convert_to_llm=agent.convert_to_llm,
         transform_context=agent.transform_context,
         get_api_key=agent.get_api_key,
@@ -187,7 +187,7 @@ function _build_config(agent::Agent)
 end
 
 function _run(agent::Agent, prompts, continuation::Bool)
-    signal = PiAI.AbortToken()
+    signal = PiAISDK.AbortToken()
     agent.signal = signal
     agent.state.is_streaming = true
     ended = Ref(false)
@@ -208,14 +208,14 @@ function _run(agent::Agent, prompts, continuation::Bool)
         catch err
             @error "agent run failed" _group=LOG_TAG exception=(err, catch_backtrace())
             if !ended[]
-                msg = PiAI.empty_assistant(agent.state.model;
-                    stop_reason=PiAI.is_aborted(signal) ? "aborted" : "error",
+                msg = PiAISDK.empty_assistant(agent.state.model;
+                    stop_reason=PiAISDK.is_aborted(signal) ? "aborted" : "error",
                     error_message=sprint(showerror, err))
                 push!(agent.state.messages, msg)
                 emit(MessageStartEvent(msg))
                 emit(MessageEndEvent(msg))
-                emit(TurnEndEvent(msg, PiAI.ToolResultMessage[]))
-                emit(AgentEndEvent(PiAI.AbstractMessage[msg]))
+                emit(TurnEndEvent(msg, PiAISDK.ToolResultMessage[]))
+                emit(AgentEndEvent(PiAISDK.AbstractMessage[msg]))
             end
         finally
             agent.state.is_streaming = false
@@ -232,27 +232,27 @@ function _ensure_idle(agent::Agent)
     end
 end
 
-function prompt!(agent::Agent, text::AbstractString; images=PiAI.ImageContent[])
+function prompt!(agent::Agent, text::AbstractString; images=PiAISDK.ImageContent[])
     _ensure_idle(agent)
     content = if isempty(images)
         String(text)
     else
-        PiAI.AbstractContent[PiAI.TextContent(String(text)), images...]
+        PiAISDK.AbstractContent[PiAISDK.TextContent(String(text)), images...]
     end
-    msg = PiAI.UserMessage(content)
-    _run(agent, PiAI.AbstractMessage[msg], false)
+    msg = PiAISDK.UserMessage(content)
+    _run(agent, PiAISDK.AbstractMessage[msg], false)
     return nothing
 end
 
-function prompt!(agent::Agent, msg::PiAI.AbstractMessage)
+function prompt!(agent::Agent, msg::PiAISDK.AbstractMessage)
     _ensure_idle(agent)
-    _run(agent, PiAI.AbstractMessage[msg], false)
+    _run(agent, PiAISDK.AbstractMessage[msg], false)
     return nothing
 end
 
-function prompt!(agent::Agent, msgs::AbstractVector{<:PiAI.AbstractMessage})
+function prompt!(agent::Agent, msgs::AbstractVector{<:PiAISDK.AbstractMessage})
     _ensure_idle(agent)
-    _run(agent, PiAI.AbstractMessage[msgs...], false)
+    _run(agent, PiAISDK.AbstractMessage[msgs...], false)
     return nothing
 end
 
@@ -260,33 +260,33 @@ function continue!(agent::Agent)
     _ensure_idle(agent)
     msgs = agent.state.messages
     isempty(msgs) && throw(ErrorException("Cannot continue: no messages"))
-    non_system = [m for m in msgs if !(m isa PiAI.SystemMessage)]
+    non_system = [m for m in msgs if !(m isa PiAISDK.SystemMessage)]
     isempty(non_system) && throw(ErrorException("Cannot continue: only system messages"))
     last = msgs[end]
-    if last isa PiAI.AssistantMessage
+    if last isa PiAISDK.AssistantMessage
         queued = dequeue!(agent.steering)
         isempty(queued) && (queued = dequeue!(agent.follow_up))
         isempty(queued) && throw(ErrorException("Cannot continue from message role: assistant"))
         _run(agent, queued, false)
     else
-        _run(agent, PiAI.AbstractMessage[], true)
+        _run(agent, PiAISDK.AbstractMessage[], true)
     end
     return nothing
 end
 
 function steer!(agent::Agent, text::AbstractString)
-    enqueue!(agent.steering, PiAI.UserMessage(String(text)))
+    enqueue!(agent.steering, PiAISDK.UserMessage(String(text)))
     return nothing
 end
-function steer!(agent::Agent, msg::PiAI.AbstractMessage)
+function steer!(agent::Agent, msg::PiAISDK.AbstractMessage)
     enqueue!(agent.steering, msg)
     return nothing
 end
 function follow_up!(agent::Agent, text::AbstractString)
-    enqueue!(agent.follow_up, PiAI.UserMessage(String(text)))
+    enqueue!(agent.follow_up, PiAISDK.UserMessage(String(text)))
     return nothing
 end
-function follow_up!(agent::Agent, msg::PiAI.AbstractMessage)
+function follow_up!(agent::Agent, msg::PiAISDK.AbstractMessage)
     enqueue!(agent.follow_up, msg)
     return nothing
 end
@@ -302,7 +302,7 @@ function peek_queued(agent::Agent)
 end
 
 function abort!(agent::Agent)
-    agent.signal === nothing || PiAI.abort!(agent.signal)
+    agent.signal === nothing || PiAISDK.abort!(agent.signal)
     return nothing
 end
 
@@ -314,9 +314,9 @@ end
 
 function reset!(agent::Agent)
     _ensure_idle(agent)
-    baseline = PiAI.AbstractMessage[]
+    baseline = PiAISDK.AbstractMessage[]
     for m in agent.state.messages
-        m isa PiAI.SystemMessage && push!(baseline, m)
+        m isa PiAISDK.SystemMessage && push!(baseline, m)
     end
     agent.state.messages = baseline
     agent.state.error_message = nothing

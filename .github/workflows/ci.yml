@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version: ['1.13', '1']
-        package: ['PiAI', 'PiAgentCore', 'PiCodingAgent', '.']
+        package: ['PiAISDK', 'PiAgentCore', 'PiCodingAgent', '.']
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -61,9 +61,9 @@ jobs:
           - package: '.'
             dir: src
             name: pikit
-          - package: PiAI
-            dir: PiAI/src
-            name: piai
+          - package: PiAISDK
+            dir: PiAISDK/src
+            name: piaisdk
           - package: PiAgentCore
             dir: PiAgentCore/src
             name: piagentcore

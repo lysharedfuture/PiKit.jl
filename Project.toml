@@ -7,17 +7,17 @@ version = "0.2.0"
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-PiAI = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
+PiAISDK = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
 PiAgentCore = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 PiCodingAgent = "0b8fd38c-6e68-41ee-b4d7-56f7890dc08d"
 
 [sources]
-PiAI = {path = "PiAI"}
+PiAISDK = {path = "PiAISDK"}
 PiAgentCore = {path = "PiAgentCore"}
 PiCodingAgent = {path = "PiCodingAgent"}
 
 [compat]
-PiAI = "0.2"
+PiAISDK = "0.2"
 PiAgentCore = "0.2"
 PiCodingAgent = "0.2"
 julia = "1.13"

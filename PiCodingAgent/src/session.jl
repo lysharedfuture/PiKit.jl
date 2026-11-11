@@ -17,7 +17,7 @@ struct MessageEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
     timestamp::String
-    message::PiAI.AbstractMessage
+    message::PiAISDK.AbstractMessage
     extra::Dict{String,Any}
 end
 
@@ -45,7 +45,7 @@ struct UsageEntry <: AbstractSessionEntry
     kind::String
     provider::String
     model::String
-    usage::PiAI.Usage
+    usage::PiAISDK.Usage
     note::Union{Nothing,String}
     extra::Dict{String,Any}
 end
@@ -57,8 +57,8 @@ struct CompactionEntry <: AbstractSessionEntry
     summary::String
     first_kept_entry_id::String
     tokens_before::Int
-    system_message::Union{Nothing,PiAI.SystemMessage}
-    usage::Union{Nothing,PiAI.Usage}
+    system_message::Union{Nothing,PiAISDK.SystemMessage}
+    usage::Union{Nothing,PiAISDK.Usage}
     details::Any
     from_hook::Union{Nothing,Bool}
     extra::Dict{String,Any}
@@ -138,7 +138,7 @@ end
 function entry_to_json(e::MessageEntry)
     d = Dict{String,Any}(e.extra)
     d["type"] = "message"; d["id"] = e.id; d["parentId"] = e.parent_id
-    d["timestamp"] = e.timestamp; d["message"] = PiAI.message_to_json(e.message)
+    d["timestamp"] = e.timestamp; d["message"] = PiAISDK.message_to_json(e.message)
     return d
 end
 function entry_to_json(e::ModelChangeEntry)
@@ -157,7 +157,7 @@ function entry_to_json(e::UsageEntry)
     d = Dict{String,Any}(e.extra)
     d["type"] = "usage"; d["id"] = e.id; d["parentId"] = e.parent_id
     d["timestamp"] = e.timestamp; d["kind"] = e.kind; d["provider"] = e.provider
-    d["model"] = e.model; d["usage"] = PiAI.usage_to_json(e.usage)
+    d["model"] = e.model; d["usage"] = PiAISDK.usage_to_json(e.usage)
     e.note === nothing || (d["note"] = e.note)
     return d
 end
@@ -166,8 +166,8 @@ function entry_to_json(e::CompactionEntry)
     d["type"] = "compaction"; d["id"] = e.id; d["parentId"] = e.parent_id
     d["timestamp"] = e.timestamp; d["summary"] = e.summary
     d["firstKeptEntryId"] = e.first_kept_entry_id; d["tokensBefore"] = e.tokens_before
-    e.system_message === nothing || (d["systemMessage"] = PiAI.message_to_json(e.system_message))
-    e.usage === nothing || (d["usage"] = PiAI.usage_to_json(e.usage))
+    e.system_message === nothing || (d["systemMessage"] = PiAISDK.message_to_json(e.system_message))
+    e.usage === nothing || (d["usage"] = PiAISDK.usage_to_json(e.usage))
     e.details === nothing || (d["details"] = e.details)
     e.from_hook === nothing || (d["fromHook"] = e.from_hook)
     return d
@@ -209,7 +209,7 @@ function entry_from_json(d)
     timestamp = get(d, "timestamp", nothing)
     if typ == "message"
         return MessageEntry(String(id), parent_id, String(timestamp),
-                            PiAI.message_from_json(get(d, "message", Dict{String,Any}())),
+                            PiAISDK.message_from_json(get(d, "message", Dict{String,Any}())),
                             _entry_extra(d, typ))
     elseif typ == "model_change"
         return ModelChangeEntry(String(id), parent_id, String(timestamp),
@@ -221,15 +221,15 @@ function entry_from_json(d)
     elseif typ == "usage"
         return UsageEntry(String(id), parent_id, String(timestamp), String(get(d, "kind", "")),
                           String(get(d, "provider", "")), String(get(d, "model", "")),
-                          PiAI.usage_from_json(get(d, "usage", nothing)), get(d, "note", nothing),
+                          PiAISDK.usage_from_json(get(d, "usage", nothing)), get(d, "note", nothing),
                           _entry_extra(d, typ))
     elseif typ == "compaction"
         sm = get(d, "systemMessage", nothing)
         return CompactionEntry(String(id), parent_id, String(timestamp),
                                String(get(d, "summary", "")), String(get(d, "firstKeptEntryId", "")),
                                Int(get(d, "tokensBefore", 0)),
-                               sm === nothing ? nothing : PiAI.message_from_json(sm)::PiAI.SystemMessage,
-                               get(d, "usage", nothing) === nothing ? nothing : PiAI.usage_from_json(d["usage"]),
+                               sm === nothing ? nothing : PiAISDK.message_from_json(sm)::PiAISDK.SystemMessage,
+                               get(d, "usage", nothing) === nothing ? nothing : PiAISDK.usage_from_json(d["usage"]),
                                get(d, "details", nothing), get(d, "fromHook", nothing), _entry_extra(d, typ))
     elseif typ == "context_edit"
         return ContextEditEntry(String(id), parent_id, String(timestamp),
@@ -355,8 +355,8 @@ _with_parent(e::ContextEditEntry, p) = ContextEditEntry(e.id, p, e.timestamp, e.
 _with_parent(e::SessionInfoEntry, p) = SessionInfoEntry(e.id, p, e.timestamp, e.name, e.extra)
 _with_parent(e, p) = e
 
-function append_message!(sm::SessionManager, message::PiAI.AbstractMessage; timestamp=now_iso())
-    if message isa PiAI.AssistantMessage && message.stop_reason == "pending"
+function append_message!(sm::SessionManager, message::PiAISDK.AbstractMessage; timestamp=now_iso())
+    if message isa PiAISDK.AssistantMessage && message.stop_reason == "pending"
         throw(ArgumentError("refusing to persist a pending assistant message"))
     end
     return append_entry!(sm, MessageEntry("", sm.leaf_id, timestamp, message, Dict{String,Any}()))
@@ -396,9 +396,9 @@ function _path_from_leaf(sm::SessionManager)
     return reverse(chain)
 end
 
-function _has_tool_results_for(messages, assistant::PiAI.AssistantMessage)
-    call_ids = Set(c.id for c in assistant.content if c isa PiAI.ToolCall)
-    return PiAI.ToolResultMessage[m for m in messages if m isa PiAI.ToolResultMessage && m.tool_call_id in call_ids]
+function _has_tool_results_for(messages, assistant::PiAISDK.AssistantMessage)
+    call_ids = Set(c.id for c in assistant.content if c isa PiAISDK.ToolCall)
+    return PiAISDK.ToolResultMessage[m for m in messages if m isa PiAISDK.ToolResultMessage && m.tool_call_id in call_ids]
 end
 
 function build_context(sm::SessionManager; include_system::Bool=true)
@@ -407,7 +407,7 @@ function build_context(sm::SessionManager; include_system::Bool=true)
     for e in sm.entries
         e isa ContextEditEntry && (edits[e.target_id] = e.replacement)
     end
-    selected = Tuple{Union{Nothing,String},PiAI.AbstractMessage}[]
+    selected = Tuple{Union{Nothing,String},PiAISDK.AbstractMessage}[]
     compaction_idx = findlast(e -> e isa CompactionEntry, chain)
     if compaction_idx === nothing
         for e in chain
@@ -426,7 +426,7 @@ function build_context(sm::SessionManager; include_system::Bool=true)
             for i in start_idx:(compaction_idx - 1)
                 e = chain[i]
                 e isa MessageEntry || continue
-                comp.system_message !== nothing && e.message isa PiAI.SystemMessage && continue
+                comp.system_message !== nothing && e.message isa PiAISDK.SystemMessage && continue
                 push!(selected, (e.id, e.message))
             end
             for i in (compaction_idx + 1):length(chain)
@@ -442,17 +442,17 @@ function build_context(sm::SessionManager; include_system::Bool=true)
         for id in omitted
             entry = get(by_id, id, nothing)
             entry isa MessageEntry || continue
-            if entry.message isa PiAI.AssistantMessage
+            if entry.message isa PiAISDK.AssistantMessage
                 for c in entry.message.content
-                    c isa PiAI.ToolCall && push!(tool_ids, c.id)
+                    c isa PiAISDK.ToolCall && push!(tool_ids, c.id)
                 end
             end
         end
     end
-    out = PiAI.AbstractMessage[]
+    out = PiAISDK.AbstractMessage[]
     for (id, message) in selected
         id !== nothing && id in omitted && continue
-        message isa PiAI.ToolResultMessage && message.tool_call_id in tool_ids && continue
+        message isa PiAISDK.ToolResultMessage && message.tool_call_id in tool_ids && continue
         push!(out, message)
     end
     return out

@@ -1,5 +1,5 @@
 @testset "standalone logging boundary" begin
-    # PiAI must not install a global logger, must not create ~/.pikit, and must
+    # PiAISDK must not install a global logger, must not create ~/.pikit, and must
     # leave an existing logger untouched.
     agent_dir = mktempdir()
     script = joinpath(agent_dir, "probe.jl")
@@ -16,7 +16,7 @@
 
     marker = Marker()
     Logging.global_logger(marker)
-    using PiAI
+    using PiAISDK
     @info "probe" _group = "ai_json" answer = 42
     println("hijacked=", Logging.global_logger() !== marker)
     """)

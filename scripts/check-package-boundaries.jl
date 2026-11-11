@@ -17,8 +17,8 @@
 
 using TOML
 
-const PACKAGE_ORDER = ["PiAI", "PiAgentCore", "PiCodingAgent", "PiKit"]
-const LIBRARY_PACKAGES = Set(["PiAI", "PiAgentCore", "PiCodingAgent"])
+const PACKAGE_ORDER = ["PiAISDK", "PiAgentCore", "PiCodingAgent", "PiKit"]
+const LIBRARY_PACKAGES = Set(["PiAISDK", "PiAgentCore", "PiCodingAgent"])
 const ALLOWED_BASE = Set(["Base", "Core"])
 const CLI_SYMBOLS = Set([
     "main", "parse_cli", "CLIOptions", "CLIError", "HELP_TEXT", "list_models_text",
@@ -113,7 +113,7 @@ function check_sources!(v::Violations, root, name, deps)
                     inside = startswith(target, src * Base.Filesystem.path_separator) || target == src
                     inside || add!(v, rel, lineno, "include escapes package src: $(im.captures[1])")
                 end
-                for q in eachmatch(r"\b(PiAI|PiAgentCore|PiCodingAgent|PiKit)\.", line)
+                for q in eachmatch(r"\b(PiAISDK|PiAgentCore|PiCodingAgent|PiKit)\.", line)
                     other = q.captures[1]
                     (other == name || other in allowed) && continue
                     add!(v, rel, lineno, "reference to non-dependency package: $(other)")

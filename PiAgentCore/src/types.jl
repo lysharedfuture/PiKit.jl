@@ -14,30 +14,30 @@ Tool(name, description, parameters, execute; label="", prepare_arguments=nothing
     Tool(String(name), String(description), Dict{String,Any}(String(k) => v for (k, v) in parameters),
          String(label), prepare_arguments, execute, execution_mode)
 
-to_tool_declaration(t::Tool) = PiAI.ToolDeclaration(t.name, t.description, t.parameters)
+to_tool_declaration(t::Tool) = PiAISDK.ToolDeclaration(t.name, t.description, t.parameters)
 
 struct ToolResult
-    content::Vector{PiAI.AbstractContent}
+    content::Vector{PiAISDK.AbstractContent}
     details::Any
     structured_content::Any
     is_error::Bool
-    usage::Union{Nothing,PiAI.Usage}
+    usage::Union{Nothing,PiAISDK.Usage}
     terminate::Bool
 end
 function ToolResult(content; details=nothing, structured_content=nothing, is_error=false,
                     usage=nothing, terminate=false)
-    return ToolResult(PiAI.as_content(content), details, structured_content, is_error, usage, terminate)
+    return ToolResult(PiAISDK.as_content(content), details, structured_content, is_error, usage, terminate)
 end
 
 struct AgentContext
-    messages::Vector{PiAI.AbstractMessage}
+    messages::Vector{PiAISDK.AbstractMessage}
     tools::Vector{Tool}
 end
-AgentContext(messages) = AgentContext(PiAI.AbstractMessage[messages...], Tool[])
+AgentContext(messages) = AgentContext(PiAISDK.AbstractMessage[messages...], Tool[])
 
 Base.@kwdef mutable struct AgentLoopConfig
-    model::PiAI.Model = PiAI.Model("unconfigured")
-    stream_fn::Function = PiAI.stream
+    model::PiAISDK.Model = PiAISDK.Model("unconfigured")
+    stream_fn::Function = PiAISDK.stream
     convert_to_llm::Function = default_convert_to_llm
     transform_context::Union{Nothing,Function} = nothing
     get_api_key::Union{Nothing,Function} = nothing
@@ -71,22 +71,22 @@ abstract type AbstractAgentEvent end
 
 struct AgentStartEvent <: AbstractAgentEvent end
 struct AgentEndEvent <: AbstractAgentEvent
-    messages::Vector{PiAI.AbstractMessage}
+    messages::Vector{PiAISDK.AbstractMessage}
 end
 struct TurnStartEvent <: AbstractAgentEvent end
 struct TurnEndEvent <: AbstractAgentEvent
-    message::PiAI.AssistantMessage
-    tool_results::Vector{PiAI.ToolResultMessage}
+    message::PiAISDK.AssistantMessage
+    tool_results::Vector{PiAISDK.ToolResultMessage}
 end
 struct MessageStartEvent <: AbstractAgentEvent
-    message::PiAI.AbstractMessage
+    message::PiAISDK.AbstractMessage
 end
 struct MessageUpdateEvent <: AbstractAgentEvent
-    message::PiAI.AssistantMessage
-    assistant_message_event::PiAI.AbstractAssistantMessageEvent
+    message::PiAISDK.AssistantMessage
+    assistant_message_event::PiAISDK.AbstractAssistantMessageEvent
 end
 struct MessageEndEvent <: AbstractAgentEvent
-    message::PiAI.AbstractMessage
+    message::PiAISDK.AbstractMessage
 end
 struct ToolExecutionStartEvent <: AbstractAgentEvent
     tool_call_id::String
@@ -119,38 +119,38 @@ event_type(::ToolExecutionStartEvent) = "tool_execution_start"
 event_type(::ToolExecutionUpdateEvent) = "tool_execution_update"
 event_type(::ToolExecutionEndEvent) = "tool_execution_end"
 
-function assistant_event_to_json(ev::PiAI.StartEvent)
-    return Dict{String,Any}("type" => "start", "partial" => PiAI.message_to_json(ev.partial))
+function assistant_event_to_json(ev::PiAISDK.StartEvent)
+    return Dict{String,Any}("type" => "start", "partial" => PiAISDK.message_to_json(ev.partial))
 end
-for (T, name) in ((PiAI.TextStartEvent, "text_start"), (PiAI.ThinkingStartEvent, "thinking_start"),
-                  (PiAI.ToolCallStartEvent, "toolcall_start"))
+for (T, name) in ((PiAISDK.TextStartEvent, "text_start"), (PiAISDK.ThinkingStartEvent, "thinking_start"),
+                  (PiAISDK.ToolCallStartEvent, "toolcall_start"))
     @eval function assistant_event_to_json(ev::$T)
         return Dict{String,Any}("type" => $name, "contentIndex" => ev.content_index,
-                                "partial" => PiAI.message_to_json(ev.partial))
+                                "partial" => PiAISDK.message_to_json(ev.partial))
     end
 end
-for (T, name) in ((PiAI.TextDeltaEvent, "text_delta"), (PiAI.ThinkingDeltaEvent, "thinking_delta"),
-                  (PiAI.ToolCallDeltaEvent, "toolcall_delta"))
+for (T, name) in ((PiAISDK.TextDeltaEvent, "text_delta"), (PiAISDK.ThinkingDeltaEvent, "thinking_delta"),
+                  (PiAISDK.ToolCallDeltaEvent, "toolcall_delta"))
     @eval function assistant_event_to_json(ev::$T)
         return Dict{String,Any}("type" => $name, "contentIndex" => ev.content_index,
-                                "delta" => ev.delta, "partial" => PiAI.message_to_json(ev.partial))
+                                "delta" => ev.delta, "partial" => PiAISDK.message_to_json(ev.partial))
     end
 end
-for (T, name) in ((PiAI.TextEndEvent, "text_end"), (PiAI.ThinkingEndEvent, "thinking_end"))
+for (T, name) in ((PiAISDK.TextEndEvent, "text_end"), (PiAISDK.ThinkingEndEvent, "thinking_end"))
     @eval function assistant_event_to_json(ev::$T)
         return Dict{String,Any}("type" => $name, "contentIndex" => ev.content_index,
-                                "content" => ev.content, "partial" => PiAI.message_to_json(ev.partial))
+                                "content" => ev.content, "partial" => PiAISDK.message_to_json(ev.partial))
     end
 end
-function assistant_event_to_json(ev::PiAI.ToolCallEndEvent)
+function assistant_event_to_json(ev::PiAISDK.ToolCallEndEvent)
     return Dict{String,Any}("type" => "toolcall_end", "contentIndex" => ev.content_index,
-                            "toolCall" => PiAI.to_json(ev.tool_call), "partial" => PiAI.message_to_json(ev.partial))
+                            "toolCall" => PiAISDK.to_json(ev.tool_call), "partial" => PiAISDK.message_to_json(ev.partial))
 end
-function assistant_event_to_json(ev::PiAI.DoneEvent)
-    return Dict{String,Any}("type" => "done", "reason" => ev.reason, "message" => PiAI.message_to_json(ev.message))
+function assistant_event_to_json(ev::PiAISDK.DoneEvent)
+    return Dict{String,Any}("type" => "done", "reason" => ev.reason, "message" => PiAISDK.message_to_json(ev.message))
 end
-function assistant_event_to_json(ev::PiAI.ErrorEvent)
-    return Dict{String,Any}("type" => "error", "reason" => ev.reason, "error" => PiAI.message_to_json(ev.error))
+function assistant_event_to_json(ev::PiAISDK.ErrorEvent)
+    return Dict{String,Any}("type" => "error", "reason" => ev.reason, "error" => PiAISDK.message_to_json(ev.error))
 end
 
 function event_to_json(ev::AgentStartEvent)
@@ -158,26 +158,26 @@ function event_to_json(ev::AgentStartEvent)
 end
 function event_to_json(ev::AgentEndEvent)
     return Dict{String,Any}("type" => event_type(ev),
-                            "messages" => Any[PiAI.message_to_json(m) for m in ev.messages])
+                            "messages" => Any[PiAISDK.message_to_json(m) for m in ev.messages])
 end
 function event_to_json(ev::TurnStartEvent)
     return Dict{String,Any}("type" => event_type(ev))
 end
 function event_to_json(ev::TurnEndEvent)
     return Dict{String,Any}("type" => event_type(ev),
-                            "message" => PiAI.message_to_json(ev.message),
-                            "toolResults" => Any[PiAI.message_to_json(m) for m in ev.tool_results])
+                            "message" => PiAISDK.message_to_json(ev.message),
+                            "toolResults" => Any[PiAISDK.message_to_json(m) for m in ev.tool_results])
 end
 function event_to_json(ev::MessageStartEvent)
-    return Dict{String,Any}("type" => event_type(ev), "message" => PiAI.message_to_json(ev.message))
+    return Dict{String,Any}("type" => event_type(ev), "message" => PiAISDK.message_to_json(ev.message))
 end
 function event_to_json(ev::MessageUpdateEvent)
     return Dict{String,Any}("type" => event_type(ev),
-                            "message" => PiAI.message_to_json(ev.message),
+                            "message" => PiAISDK.message_to_json(ev.message),
                             "assistantMessageEvent" => assistant_event_to_json(ev.assistant_message_event))
 end
 function event_to_json(ev::MessageEndEvent)
-    return Dict{String,Any}("type" => event_type(ev), "message" => PiAI.message_to_json(ev.message))
+    return Dict{String,Any}("type" => event_type(ev), "message" => PiAISDK.message_to_json(ev.message))
 end
 function event_to_json(ev::ToolExecutionStartEvent)
     return Dict{String,Any}("type" => event_type(ev), "toolCallId" => ev.tool_call_id,
@@ -197,9 +197,9 @@ function event_to_json(ev::ToolExecutionEndEvent)
 end
 
 function default_convert_to_llm(messages)
-    out = PiAI.AbstractMessage[]
+    out = PiAISDK.AbstractMessage[]
     for m in messages
-        if m isa PiAI.SystemMessage || m isa PiAI.UserMessage || m isa PiAI.AssistantMessage || m isa PiAI.ToolResultMessage
+        if m isa PiAISDK.SystemMessage || m isa PiAISDK.UserMessage || m isa PiAISDK.AssistantMessage || m isa PiAISDK.ToolResultMessage
             push!(out, m)
         end
     end

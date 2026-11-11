@@ -14,22 +14,22 @@ Four packages make up the stack, in dependency order:
 
 | Package | Contents |
 |---|---|
-| `PiAI` | message/content types, SSE streams, providers, model catalog, credentials, retry/overflow |
+| `PiAISDK` | message/content types, SSE streams, providers, model catalog, credentials, retry/overflow |
 | `PiAgentCore` | agent loop, hooks, queues, abort, event model |
 | `PiCodingAgent` | coding tools, session v3, compaction, system prompt, `AgentSession` runtime |
 | `PiKit` | CLI (`print`/`json`/`rpc`/`repl`), config/trust, log sink, `PiKit.main` |
 
 ```julia
 using Pkg
-Pkg.add(["PiAI", "PiAgentCore", "PiCodingAgent", "PiKit"])  # once registered
+Pkg.add(["PiAISDK", "PiAgentCore", "PiCodingAgent", "PiKit"])  # once registered
 Pkg.develop(path="/path/to/PiKit")   # local development: root project resolves the subpackages
 ```
 
-`PiAI ← PiAgentCore ← PiCodingAgent ← PiKit` is the only allowed dependency
-direction. Installing `PiAI` alone does not pull in the CLI, tools or session
+`PiAISDK ← PiAgentCore ← PiCodingAgent ← PiKit` is the only allowed dependency
+direction. Installing `PiAISDK` alone does not pull in the CLI, tools or session
 implementation. Requires Julia 1.13+.
 
-`using PiKit` keeps the v0.1 module paths: `PiKit.AI === PiAI`,
+`using PiKit` keeps the v0.1 module paths: `PiKit.AI === PiAISDK`,
 `PiKit.AgentCore === PiAgentCore`, `PiKit.CodingAgent === PiCodingAgent`.
 
 ### Upgrading from 0.1
@@ -102,7 +102,7 @@ with `replacement: null` exclusion semantics.
 ## Development
 
 ```sh
-for p in PiAI PiAgentCore PiCodingAgent .; do
+for p in PiAISDK PiAgentCore PiCodingAgent .; do
   julia --project=$p -e 'using Pkg; Pkg.instantiate(); Pkg.test()'
 done
 julia --project=scripts scripts/check-package-boundaries.jl

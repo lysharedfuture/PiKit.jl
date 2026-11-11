@@ -1,4 +1,4 @@
-module PiAI
+module PiAISDK
 
 using Logging
 using Dates
@@ -53,4 +53,4 @@ function __init__()
     return nothing
 end
 
-end # module PiAI
+end # module PiAISDK

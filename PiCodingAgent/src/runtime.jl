@@ -4,7 +4,7 @@ mutable struct AgentSession
     agent::PiAgentCore.Agent
     session::SessionManager
     cwd::String
-    model::PiAI.Model
+    model::PiAISDK.Model
     thinking_level::String
     tools::Vector{PiAgentCore.Tool}
     auto_compaction::Bool
@@ -12,7 +12,7 @@ mutable struct AgentSession
     settings::Dict{String,Any}
     listeners::Vector{Function}
     listener_lock::ReentrantLock
-    last_assistant::Union{Nothing,PiAI.AssistantMessage}
+    last_assistant::Union{Nothing,PiAISDK.AssistantMessage}
     retry_attempt::Int
     overflow_recovered::Bool
     is_compacting::Bool
@@ -57,7 +57,7 @@ function _system_message_for(s::AgentSession; system_prompt=nothing, append_syst
         system_prompt=system_prompt, append_system_prompt=append_system_prompt,
         no_context_files=no_context_files, trusted=trusted, agent_dir=s.agent_dir)
     cleaned = Pair{String,Union{String,Nothing}}[p for p in sections if p.first != "preamble"]
-    sys = PiAI.SystemMessage(""; sections=cleaned)
+    sys = PiAISDK.SystemMessage(""; sections=cleaned)
     sys.tools_added = [Dict{String,Any}("name" => t.name, "description" => t.description,
                                         "parameters" => t.parameters) for t in s.tools]
     return sys
@@ -72,16 +72,16 @@ forking the underlying session.
 """
 function sync_agent_context!(s::AgentSession)
     history = build_context(s.session)
-    if isempty(history) || !(history[1] isa PiAI.SystemMessage)
+    if isempty(history) || !(history[1] isa PiAISDK.SystemMessage)
         sys = _system_message_for(s)
         append_message!(s.session, sys)
-        history = PiAI.AbstractMessage[sys; history...]
+        history = PiAISDK.AbstractMessage[sys; history...]
     end
     s.agent.state.messages = history
     return nothing
 end
 
-function create_agent_session(; cwd::String=pwd(), model::PiAI.Model, session_manager::SessionManager,
+function create_agent_session(; cwd::String=pwd(), model::PiAISDK.Model, session_manager::SessionManager,
                               settings::Dict{String,Any}=Dict{String,Any}(),
                               tools_names=DEFAULT_TOOL_NAMES,
                               thinking_level::String="off",
@@ -107,25 +107,25 @@ function create_agent_session(; cwd::String=pwd(), model::PiAI.Model, session_ma
                            Function[], ReentrantLock(), nothing, 0, false, false, false,
                            agent_dir, api_key)
     history = build_context(session_manager)
-    if isempty(history) || !(history[1] isa PiAI.SystemMessage)
+    if isempty(history) || !(history[1] isa PiAISDK.SystemMessage)
         sys = _system_message_for(session; system_prompt=system_prompt,
             append_system_prompt=append_system_prompt, no_context_files=no_context_files,
             trusted=trusted)
         append_message!(session_manager, sys)
-        history = PiAI.AbstractMessage[sys; history...]
+        history = PiAISDK.AbstractMessage[sys; history...]
     end
     agent = PiAgentCore.Agent(model=model, tools=tools, messages=history,
         thinking_level=thinking_level, session_id=session_manager.header.id,
         convert_to_llm=coding_convert_to_llm,
         get_api_key=model -> resolve_api_key(model.provider; cli_override=api_key, agent_dir=agent_dir))
-    agent.prepare_request = (req, signal) -> (context=PiAI.LLMContext(build_context(session_manager)),)
+    agent.prepare_request = (req, signal) -> (context=PiAISDK.LLMContext(build_context(session_manager)),)
     session.agent = agent
     PiAgentCore.subscribe(agent, ev -> _handle_agent_event!(session, ev))
     return session
 end
 
 function _stream_options(s::AgentSession, signal=nothing)
-    return PiAI.StreamOptions(
+    return PiAISDK.StreamOptions(
         api_key=resolve_api_key(s.model.provider; cli_override=s.api_key, agent_dir=s.agent_dir),
         signal=signal,
         session_id=s.session.header.id,
@@ -137,7 +137,7 @@ function _stream_options(s::AgentSession, signal=nothing)
 end
 
 function _persist_message!(s::AgentSession, msg)
-    if msg isa PiAI.AssistantMessage
+    if msg isa PiAISDK.AssistantMessage
         msg.stop_reason in ("error", "aborted", "pending") && return
     end
     entry = append_message!(s.session, msg)
@@ -149,7 +149,7 @@ function _handle_agent_event!(s::AgentSession, ev)
     if ev isa PiAgentCore.MessageEndEvent
         msg = ev.message
         _persist_message!(s, msg)
-        if msg isa PiAI.AssistantMessage
+        if msg isa PiAISDK.AssistantMessage
             s.last_assistant = msg
         end
     elseif ev isa PiAgentCore.TurnEndEvent
@@ -170,7 +170,7 @@ function _handle_agent_event!(s::AgentSession, ev)
     return nothing
 end
 
-function prompt!(s::AgentSession, text::AbstractString; images=PiAI.ImageContent[])
+function prompt!(s::AgentSession, text::AbstractString; images=PiAISDK.ImageContent[])
     s.agent.state.model = s.model
     s.agent.state.thinking_level = s.thinking_level
     s.abort_requested = false
@@ -181,7 +181,7 @@ function prompt!(s::AgentSession, text::AbstractString; images=PiAI.ImageContent
     return finish_run!(s)
 end
 
-function prompt!(s::AgentSession, messages::AbstractVector{<:PiAI.AbstractMessage})
+function prompt!(s::AgentSession, messages::AbstractVector{<:PiAISDK.AbstractMessage})
     s.abort_requested = false
     s.retry_attempt = 0
     s.overflow_recovered = false
@@ -203,7 +203,7 @@ function _drop_last_error_assistant!(s::AgentSession)
     msgs = s.agent.state.messages
     while !isempty(msgs)
         last = msgs[end]
-        if last isa PiAI.AssistantMessage && last.stop_reason in ("error", "aborted")
+        if last isa PiAISDK.AssistantMessage && last.stop_reason in ("error", "aborted")
             pop!(msgs)
         else
             break
@@ -228,7 +228,7 @@ function finish_run!(s::AgentSession)
             emit_session(s, (type="agent_settled", aborted=false))
             return nothing
         end
-        overflow = PiAI.is_context_overflow(last; context_window=s.model.context_window)
+        overflow = PiAISDK.is_context_overflow(last; context_window=s.model.context_window)
         if overflow && !s.overflow_recovered
             s.overflow_recovered = true
             try
@@ -243,14 +243,14 @@ function finish_run!(s::AgentSession)
             PiAgentCore.continue!(s.agent)
             continue
         end
-        if s.retry.enabled && s.retry_attempt < s.retry.max_attempts && PiAI.is_retryable_assistant_error(last)
+        if s.retry.enabled && s.retry_attempt < s.retry.max_attempts && PiAISDK.is_retryable_assistant_error(last)
             s.retry_attempt += 1
             delay = retry_delay_ms(s.retry, s.retry_attempt)
             emit_session(s, (type="auto_retry_start", attempt=s.retry_attempt,
                              maxAttempts=s.retry.max_attempts, delayMs=delay,
                              errorMessage=something(last.error_message, "Request failed")))
-            PiAI.sleep_abortable(delay / 1000, s.agent.signal)
-            if s.abort_requested || PiAI.is_aborted(s.agent.signal)
+            PiAISDK.sleep_abortable(delay / 1000, s.agent.signal)
+            if s.abort_requested || PiAISDK.is_aborted(s.agent.signal)
                 emit_session(s, (type="auto_retry_end", success=false, attempt=s.retry_attempt,
                                  finalError=something(last.error_message, "Request aborted")))
                 emit_session(s, (type="agent_settled", aborted=true))
@@ -299,7 +299,7 @@ end
 
 function steer!(s::AgentSession, text::AbstractString)
     PiAgentCore.steer!(s.agent, text)
-    emit_session(s, (type="queue_update", steering=String[m isa PiAI.UserMessage ? (m.content isa AbstractString ? m.content : "") : "" for m in s.agent.steering.messages], followUp=String[]))
+    emit_session(s, (type="queue_update", steering=String[m isa PiAISDK.UserMessage ? (m.content isa AbstractString ? m.content : "") : "" for m in s.agent.steering.messages], followUp=String[]))
     return nothing
 end
 
@@ -315,7 +315,7 @@ function clear_queues!(s::AgentSession)
     return nothing
 end
 
-function set_model!(s::AgentSession, model::PiAI.Model)
+function set_model!(s::AgentSession, model::PiAISDK.Model)
     s.model = model
     s.agent.state.model = model
     append_entry!(s.session, ModelChangeEntry(new_entry_id(Set{String}(e.id for e in s.session.entries if e.id !== nothing)),
@@ -324,7 +324,7 @@ function set_model!(s::AgentSession, model::PiAI.Model)
 end
 
 function set_thinking_level!(s::AgentSession, level::String)
-    level in PiAI.THINKING_LEVELS || throw(ArgumentError("Unknown thinking level: $(level)"))
+    level in PiAISDK.THINKING_LEVELS || throw(ArgumentError("Unknown thinking level: $(level)"))
     s.thinking_level = level
     s.agent.state.thinking_level = level
     append_entry!(s.session, ThinkingLevelChangeEntry(new_entry_id(Set{String}(e.id for e in s.session.entries if e.id !== nothing)),

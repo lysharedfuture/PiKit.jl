@@ -4,13 +4,13 @@ using Logging
 const TEST_AGENT_DIR = mktempdir()
 ENV["PIKIT_AGENT_DIR"] = TEST_AGENT_DIR
 
-using PiAI
+using PiAISDK
 import fd_jll
 import ripgrep_jll
 using PiAgentCore
 using PiCodingAgent
 
-const AI = PiAI
+const AI = PiAISDK
 const AC = PiAgentCore
 const CA = PiCodingAgent
 

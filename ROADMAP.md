@@ -10,7 +10,7 @@
 
 | 上游包 | 作用 | Julia 目标 | 期次 |
 |---|---|---|---|
-| `pi-ai` | 统一 LLM API、模型发现、多 Provider | `PiAI.jl` | 一期子集；二期补齐 |
+| `pi-ai` | 统一 LLM API、模型发现、多 Provider | `PiAISDK.jl` | 一期子集；二期补齐 |
 | `pi-agent-core` | agent 循环、状态、附件、传输抽象 | `PiAgentCore.jl` | 一期核心；二期补全 |
 | `pi-coding-agent` | 编码 agent：工具、提示词、会话、四种模式 | `PiCodingAgent.jl` | 一期核心；二/三期补全 |
 | `pi-durable` | 持久化会话/任务/文档运行时、可恢复执行 | `PiDurable.jl` | 二期 |
@@ -72,7 +72,7 @@
 
 | 子阶段 | 内容 | 退出标准 | Change |
 |---|---|---|---|
-| **2A 拆包** | `PiAI.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl`；`PiKit.jl` 变为聚合与 CLI 层；模块间只用公开 API | 三包独立测试绿；PiKit 快照回归与 v0.1 一致；三个包提交 General | `changes/phase2a-package-split` |
+| **2A 拆包** | `PiAISDK.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl`；`PiKit.jl` 变为聚合与 CLI 层；模块间只用公开 API | 三包独立测试绿；PiKit 快照回归与 v0.1 一致；三个包提交 General | `changes/phase2a-package-split` |
 | **2B durable** | `PiDurable.jl`：持久化运行、effect 记录与 `replay(:never\|:safe)`、`deferred` 轮询、崩溃后续跑、`context_edit` 全语义、compaction `details`/`fromHook` | `kill -9` 后可续跑；durable JSONL store 可被上游 `pi-durable` 打开；重放不重复副作用 | `changes/phase2b-durable-runtime` |
 | **2C ai 广度** | `openai-responses`、`google-generative-ai`/vertex、bedrock、mistral、azure、images/classifiers、OAuth/login、long cache | 每 Provider 一套 mock 请求体快照 + 一次真实手工冒烟 | `changes/phase2c-ai-providers` |
 | **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；`PiTelemetry.jl` 核心包 + NOOP/内存/render + AI 请求 span | schema 通过上游 fixture；MCP 连本地 server；遥测包注册、默认关闭、AI span/event/metrics 可断言 | `changes/phase2d-schema-mcp-telemetry` |
@@ -144,7 +144,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 HTTP 1.10 + JSON 1.13 + ripgrep_jll 15.2
 ripgrep_jll（grep）；fd_jll（find；待 Yggdrasil）
   └── 一期 PiKit（AI/AgentCore/CodingAgent 三模块）
-        └── 2A 拆包 ──> PiAI / PiAgentCore / PiCodingAgent
+        └── 2A 拆包 ──> PiAISDK / PiAgentCore / PiCodingAgent
                           ├── 2B PiDurable
                           ├── 2C ai 广度 ──> 2D PiSchema（strict tools 前置）
                           └── 2D PiMCP（weakdep）/ PiTelemetry
@@ -170,8 +170,8 @@ ripgrep_jll（grep）；fd_jll（find；待 Yggdrasil）
 
 已定：**一期提交 General**；二期 2A 完成后再注册三个子包；v1.0 前冻结 API。
 
-- **D4 已定（2D）**：`PiSchema` 独立成包，与上游 `pi-schema` 包边界一致；`PiAI` 直接依赖它，`PiAgentCore`/`PiDurable` 通过 `PiAI` 或显式依赖使用。并入 `PiAI` 的方案否决：会让只依赖 schema 的外部项目被迫拉入 HTTP/JSON/AI 依赖，并破坏上游包边界。
-- **D6 已定（2A）**：保留 `PiKit` 为 CLI/聚合层。它只承载 `(@main)(args)`/`main()`、CLI 解析与 print/JSON/RPC/REPL 模式、配置与信任、日志 sink、应用装配（auth/durable/MCP/TUI 等）、发布元数据与兼容别名；不新增核心 AI/agent/工具/会话 API。`PiCodingAgent` 保持纯库，不导出 `main`、不依赖 `PiKit`。`PiKit` 不是第四个核心包；v1.0 API 对等以 `PiAI`/`PiAgentCore`/`PiCodingAgent`/`PiDurable` 为准。
+- **D4 已定（2D）**：`PiSchema` 独立成包，与上游 `pi-schema` 包边界一致；`PiAISDK` 直接依赖它，`PiAgentCore`/`PiDurable` 通过 `PiAISDK` 或显式依赖使用。并入 `PiAISDK` 的方案否决：会让只依赖 schema 的外部项目被迫拉入 HTTP/JSON/AI 依赖，并破坏上游包边界。
+- **D6 已定（2A）**：保留 `PiKit` 为 CLI/聚合层。它只承载 `(@main)(args)`/`main()`、CLI 解析与 print/JSON/RPC/REPL 模式、配置与信任、日志 sink、应用装配（auth/durable/MCP/TUI 等）、发布元数据与兼容别名；不新增核心 AI/agent/工具/会话 API。`PiCodingAgent` 保持纯库，不导出 `main`、不依赖 `PiKit`。`PiKit` 不是第四个核心包；v1.0 API 对等以 `PiAISDK`/`PiAgentCore`/`PiCodingAgent`/`PiDurable` 为准。
 
 ## 风险 / Risks
 

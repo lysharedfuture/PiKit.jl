@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "f2c15135ab0777dc637c74cbd891ec166986c3cb"
+project_hash = "0a5a656804ecdc1208c28707fc0bd0f5f39efc76"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -144,7 +144,7 @@ registries = "General"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "3.0.6"
 
-[[deps.PiAI]]
+[[deps.PiAISDK]]
 deps = ["Dates", "HTTP", "JSON", "Logging", "Random"]
 path = "."
 uuid = "9de19040-de4d-4d6c-8f46-3781ce430fcc"

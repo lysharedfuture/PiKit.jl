@@ -8,7 +8,7 @@ Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-PiAI = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
+PiAISDK = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
 PiAgentCore = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Unicode = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -17,13 +17,13 @@ fd_jll = "a19947ed-bb28-5243-b32e-cf3c9f55efba"
 ripgrep_jll = "e10fc14b-37cd-5cbc-b289-ad01b12ebaad"
 
 [sources]
-PiAI = {path = "../PiAI"}
+PiAISDK = {path = "../PiAISDK"}
 PiAgentCore = {path = "../PiAgentCore"}
 
 [compat]
 HTTP = "1.10"
 fd_jll = "10.3.0"
-PiAI = "0.2"
+PiAISDK = "0.2"
 PiAgentCore = "0.2"
 julia = "1.13"
 ripgrep_jll = "15.2"

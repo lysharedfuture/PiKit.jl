@@ -33,7 +33,7 @@ Base.@kwdef mutable struct CLIOptions
     version::Bool = false
     help::Bool = false
     prompt_parts::Vector{String} = String[]
-    images::Vector{PiAI.ImageContent} = PiAI.ImageContent[]
+    images::Vector{PiAISDK.ImageContent} = PiAISDK.ImageContent[]
 end
 
 function _need_value(args, i, opt)
@@ -48,7 +48,7 @@ function _read_prompt_file(path::String)
         data = Base64.base64encode(read(path))
         mime = ext == ".png" ? "image/png" : ext in (".jpg", ".jpeg") ? "image/jpeg" :
                ext == ".gif" ? "image/gif" : ext == ".webp" ? "image/webp" : "image/bmp"
-        return (text=nothing, image=PiAI.ImageContent(data, mime))
+        return (text=nothing, image=PiAISDK.ImageContent(data, mime))
     end
     return (text=read(path, String), image=nothing)
 end
@@ -150,7 +150,7 @@ function parse_cli(args)
     opts.mode in ("text", "json", "rpc") || throw(CLIError("Invalid mode: $(opts.mode)"))
     opts.print && (opts.mode = "text")
     if opts.thinking !== nothing
-        opts.thinking in PiAI.THINKING_LEVELS || throw(CLIError("Invalid thinking level: $(opts.thinking)"))
+        opts.thinking in PiAISDK.THINKING_LEVELS || throw(CLIError("Invalid thinking level: $(opts.thinking)"))
     end
     opts.session_id === nothing ||
         occursin(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$", opts.session_id) ||

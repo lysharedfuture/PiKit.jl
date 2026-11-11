@@ -9,8 +9,8 @@ using Unicode
 using HTTP
 using ripgrep_jll
 using fd_jll
-using PiAI
-using PiAI: plain
+using PiAISDK
+using PiAISDK: plain
 using PiAgentCore
 
 include("types.jl")
