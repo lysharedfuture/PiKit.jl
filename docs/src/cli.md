@@ -1,6 +1,8 @@
 # CLI
 
-`bin/pikit [options] [prompt]`
+`bin/pikit [options] [prompt]`, `julia -m PiKit [options] [prompt]`, or
+`PiKit.main()` from Julia. The CLI lives in `PiKit`; `PiCodingAgent` is a
+library and does not export `main` or the argument-parsing helpers.
 
 Exit codes: `0` success, `1` request/tool failure or unhandled error, `2` invalid
 arguments, `130` interrupted.
@@ -66,7 +68,7 @@ Authentication order: `--api-key`, `~/.pikit/auth.json`,
 |---|---|
 | `PIKIT_AGENT_DIR` | agent state root (default `~/.pikit/agent`) |
 | `PIKIT_SESSION_DIR` | session root |
-| `PIKIT_LOG` | `info` (default), `debug`, or `tag=level,...` |
+| `PIKIT_LOG` | `info` (default), `debug`, or `tag=level,...` (tags are `ai_*`, `agent_core_*`, `coding_*`, `pikit_*`) |
 | `PIKIT_LOG_FILE` | log file path |
 | `PIKIT_LOG_STDERR` | `1` mirrors logs to stderr |
 | `PIKIT_OFFLINE` | `1` forbids the remaining fd download (temporary until fd_jll) |

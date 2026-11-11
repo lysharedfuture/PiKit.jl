@@ -158,9 +158,24 @@
 
 ### 2A-01 包边界与依赖方向
 
+- 上游：packages/coding-agent/package.json:44
+- 观察：上游按 npm 包分层发版：`pi-coding-agent` 依赖 `pi-agent-core` 与 `pi-ai`，`pi-agent-core` 只依赖 `pi-ai`（`packages/agent/package.json:26`）；依赖方向单向，由包管理器强制。
+- Julia 方案：单体仓库拆为四个包（`PiAI ← PiAgentCore ← PiCodingAgent ← PiKit`），依赖写入各自 `Project.toml` 的 `[deps]`/`[compat]`，开发期用相对 `[sources]` 解析；`scripts/check-package-boundaries.jl` 静态校验 `using`/`import`/`include`/限定名，禁止反向依赖与跨包 `include`。
+- 结论：采纳
+
 ### 2A-02 类型身份与模块别名
 
+- 上游：packages/ai/src/index.ts:1
+- 观察：每个上游包只有一个模块实例，类型身份由包入口唯一决定；`pi-ai` 入口保持 side-effect free，provider 工厂与注册放在子路径导出，避免根导入触发全局注册。
+- Julia 方案：子包源码只以包名限定引用（`PiAI.*`），不复制模块；`PiKit` 用 `const AI = PiAI` 等别名保持一期路径，`PiKit.AI === PiAI` 保证类型身份唯一；provider 注册只在 `PiAI.__init__`，`PiKit.__init__` 不再重复调用，避免 `PROVIDER_MODELS` 出现重复项。
+- 结论：采纳
+
 ### 2A-03 日志安装点与库设计
+
+- 上游：packages/coding-agent/src/core/crash-log.ts:1
+- 观察：上游把日志落盘放在应用层：`coding-agent` 的 `core/crash-log.ts` 读取 agent dir 并写文件，可复用库不接管全局输出。
+- Julia 方案：子包只使用 stdlib `Logging` 的宏与 `_group=LOG_TAG`；文件 sink（`TagFilterLogger`/`install_logging!`）只在 `PiKit.__init__` 安装一次；单独 `using PiAI` 保留调用方 logger，测试用 `with_logger` 或子进程断言未创建日志文件。
+- 结论：采纳
 
 ## 2B 持久运行时
 
