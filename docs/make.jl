@@ -1,10 +1,13 @@
 using Documenter
 import PiKit
+import PiAI
+import PiAgentCore
+import PiCodingAgent
 
 makedocs(
     sitename = "PiKit.jl",
     authors = "PiKit contributors",
-    modules = [PiKit],
+    modules = [PiKit, PiAI, PiAgentCore, PiCodingAgent],
     pages = [
         "Home" => "index.md",
         "CLI" => "cli.md",

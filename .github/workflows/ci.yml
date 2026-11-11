@@ -6,12 +6,24 @@ on:
   pull_request:
 
 jobs:
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.13'
+      - uses: julia-actions/cache@v2
+      - name: Package boundaries
+        run: julia --startup-file=no --project=scripts scripts/check-package-boundaries.jl
+
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         julia-version: ['1.13', '1']
+        package: ['PiAI', 'PiAgentCore', 'PiCodingAgent', '.']
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -19,13 +31,13 @@ jobs:
           version: ${{ matrix.julia-version }}
       - uses: julia-actions/cache@v2
       - name: Instantiate
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+        run: julia --project=${{ matrix.package }} -e 'using Pkg; Pkg.instantiate()'
       - name: Test
         env:
-          PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent
-        run: julia --project=. -e 'using Pkg; Pkg.test()'
+          PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent-${{ matrix.package }}
+        run: julia --project=${{ matrix.package }} -e 'using Pkg; Pkg.test()'
 
-  coverage:
+  snapshot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,15 +46,46 @@ jobs:
           version: '1.13'
       - uses: julia-actions/cache@v2
       - name: Instantiate
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+        run: |
+          julia --project=. -e 'using Pkg; Pkg.instantiate()'
+          julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
+      - name: Snapshot regression
+        run: julia --startup-file=no --project=scripts scripts/snapshot-regression.jl --check
+
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: '.'
+            dir: src
+            name: pikit
+          - package: PiAI
+            dir: PiAI/src
+            name: piai
+          - package: PiAgentCore
+            dir: PiAgentCore/src
+            name: piagentcore
+          - package: PiCodingAgent
+            dir: PiCodingAgent/src
+            name: picodingagent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.13'
+      - uses: julia-actions/cache@v2
+      - name: Instantiate
+        run: julia --project=${{ matrix.package }} -e 'using Pkg; Pkg.instantiate()'
       - name: Test with coverage
         env:
-          PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent-coverage
-        run: julia --project=. -e 'using Pkg; Pkg.test(; coverage=true)'
+          PIKIT_AGENT_DIR: ${{ runner.temp }}/pikit-agent-coverage-${{ matrix.name }}
+        run: julia --project=${{ matrix.package }} -e 'using Pkg; Pkg.test(; coverage=true)'
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src
+          directories: ${{ matrix.dir }}
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage-lcov
+          name: coverage-${{ matrix.name }}
           path: lcov.info
