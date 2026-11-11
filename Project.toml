@@ -1,7 +1,7 @@
 name = "PiKit"
 uuid = "31a94650-92d9-47a7-b751-fcb2edf0c25a"
 authors = ["PiKit contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"

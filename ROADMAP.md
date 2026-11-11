@@ -27,19 +27,19 @@
 - 一期 v0.1 代码、测试与文档已交付：`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块、三个 Provider、AgentCore 循环、8 个编码工具、会话 v3 子集、压缩/溢出/重试、print/JSON/RPC/REPL、日志与 CLI。
 - 零网络全量测试通过：`PIKIT_AGENT_DIR=$(mktemp -d) julia --project=. -e 'using Pkg; Pkg.test()'`。
 - faux 端到端、JSON/RPC 冒烟通过；`grep` 使用 `ripgrep_jll`，`find` 在 `fd_jll` 注册前使用临时下载路径；`.gitignore` 集成冒烟通过。
-- GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；手动 `v0.1.0` tag/Release 已移除，注册合并后由 TagBot 创建 tag。
+- GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；`v0.1.0` 已注册并由 TagBot 创建 tag；freeze commit 作为 `0.1.1` patch 注册中。
 - 文档已交付：`docs/src/cli.md`、`docs/src/json.md`、`docs/src/sessions.md`、`docs/src/upstream-compat.md`、`docs/src/julia-improvements.md` 与改进记录检查器。
 
 ## 进行中 / In Progress
 
-- **General 注册**：PR [JuliaRegistries/General#175351](https://github.com/JuliaRegistries/General/pull/175351) 已创建；Registry Consistency/Treecheck 通过；包名相似已由维护者 override；`grep` 已改用 `ripgrep_jll`，`find` 等待 `fd_jll`；注册将重新指向 freeze commit，合并后由 TagBot 创建 `v0.1.0`。合并前 `Pkg.add("PiKit")` 不可用。
+- **General 注册**：`v0.1.0` 已通过 PR #175351 合并且 TagBot 创建 tag；该版本树早于 freeze commit。freeze commit 以 `0.1.1` patch 重新提交注册，包含 `bin/pikit` 修复与文档更新；`find` 仍等待 `fd_jll`。0.1.1 合并后 2A 从该 tag 开始。
 - 旧 PR #175350 已评论标记为 superseded（作者为 `JuliaRegistrator` bot，仓库账号无关闭权限，等待 General 维护者清理）。
 
 ## 已完成变更 / Completed Changes
 
 | 功能 | Change | 状态 |
 |---|---|---|
-| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；GitHub 仓库已创建；General 注册 #175351 待合并；tag/Release 由 TagBot 在注册后创建 |
+| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；`v0.1.0` 已注册并 tag；`0.1.1` freeze patch 注册中 |
 
 ## 待办 / Planned
 
@@ -47,7 +47,7 @@
 
 一期范围：单包 `PiKit`（`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块）、`openai-completions` / `anthropic-messages` / `faux` 三个 Provider、8 个工具（read/bash/powershell/edit/write/grep/find/ls）、会话 v3 子集、print/JSON/RPC/行式 REPL、压缩/溢出/重试、CLI 子集。
 
-**状态：代码、测试、文档已完成；General 注册 PR #175351 待合并；tag/Release 由 TagBot 在注册后创建，合并前 `Pkg.add("PiKit")` 不可用。**
+**状态：代码、测试、文档已完成；`v0.1.0` 已注册并 tag；freeze commit 以 `0.1.1` patch 注册中。**
 
 | 功能 | 说明 | Change |
 |---|---|---|
@@ -59,7 +59,7 @@
 | CLI 四模式 | 配置、手写解析、runtime、print/JSON/RPC/REPL | `pikit-julia-port` |
 | 日志 | 方案 C：默认只写文件，`PIKIT_LOG_STDERR=1` 才镜像 stderr；默认 `info`，`debug` 关闭 | `pikit-julia-port` |
 | 开发过程 | 三期通用：每波记录、稳定 ID、检查器与每期发布门禁 | `pikit-julia-port` |
-| 发布 | 文档、General 注册、TagBot `v0.1.0` tag | `pikit-julia-port` |
+| 发布 | 文档、General 注册、TagBot `v0.1.0`/`v0.1.1` tag | `pikit-julia-port` |
 
 **发布策略：一期即提交 General**（`PiKit` 名称已核对未被占用）。以 `0.x` 版本发布并明确 API 未冻结；注册合并后安装方式 `Pkg.add("PiKit")`，此前源码安装使用 `Pkg.develop(path=...)` 或 `Pkg.develop(url="https://github.com/lysharedfuture/PiKit.jl")`。注册 PR #175351 正在等待人工审核/合并。
 
@@ -111,21 +111,21 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 
 ## 已知缺陷 / Known Issues
 
-- **General 注册未合并**：PR #175351 的 Registry Consistency/Treecheck 已通过，包名相似已由维护者 override；当前等待指向 freeze commit 的更新与合并；合并前不能通过 `Pkg.add("PiKit")` 安装。
+- **0.1.1 尚未注册**：`v0.1.0` 已注册并 tag，但其树早于 freeze commit（`bin/pikit` 旧调用）；freeze commit 以 `0.1.1` patch 重新注册，合并前 `Pkg.add("PiKit")` 只到 0.1.0。
 - **Windows PowerShell 实机未验证**：当前环境为 Linux；非 Windows 返回错误路径已有测试，`powershell` 的实际 Windows 冒烟待补。
 - **REPL TTY 手工验证未执行**：自动测试覆盖 stdin/print 路径；真实 TTY 下的斜杠命令、流式渲染与 Ctrl+C 中止需手工冒烟。
 - 旧 General PR #175350 仍处于 open 状态，等待维护者关闭；新 PR #175351 为有效注册单。
 
 ## 里程碑 / Milestones
 
-- **一期 v0.1**：**已完成 M0–M7 与 M8 的代码/测试/文档；General 注册 PR #175351 待合并；TagBot 将在注册后创建 `v0.1.0`**（`change: pikit-julia-port`）。
+- **一期 v0.1**：**已完成 M0–M7 与 M8 的代码/测试/文档；`v0.1.0` 已注册并 tag；freeze commit 以 `0.1.1` patch 注册中**（`change: pikit-julia-port`）。
 - **二期 v0.2–v0.4**：规划已建档，未编码（2A `phase2a-package-split`；2B `phase2b-durable-runtime`；2C `phase2c-ai-providers`；2D `phase2d-schema-mcp-telemetry`）。
 - **三期 v0.5–v1.0**：未开始（3A–3E）。
 - **改进记录门禁**：一期 M8 `--phase 1 --strict`；二期各子阶段收口 `--phase 2 --strict`；三期 v1.0 `--all --strict`。
 
 ### 一期里程碑 M0–M8
 
-**M0–M7 已完成；M8 的文档与 GitHub 仓库已完成；General 注册 PR #175351 待合并，tag/Release 由 TagBot 在注册后创建。**
+**M0–M7 已完成；M8 的文档、GitHub 仓库与 `v0.1.0` 注册/tag 已完成；freeze commit 的 `0.1.1` patch 注册中。**
 
 | 里程碑 | 范围 | 退出标准（可执行） | 依赖 |
 |---|---|---|---|
@@ -137,7 +137,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 | **M5 会话+E2E** | session（header 校验/尾部修复/`context_edit`/build_context）、system_prompt、runtime、config、print | v3 fixture 往返；compaction+`context_edit` 重建；`-p` faux 端到端 | M3、M4 |
 | **M6 协议模式** | JSON 事件全集、RPC 命令与 `disposition`、REPL、CLI 全量 flag | JSON 快照匹配 `docs/src/json.md`；RPC 冒烟；REPL 手工 | M5 |
 | **M7 压缩与恢复** | compaction（usage 锚点/切点/entry 字段）、溢出恢复、retry 集成 | 阈值压缩、413 溢出重试、配额 429 不重试三条端到端 | M6 |
-| **M8 发布** | docs、README、julia-improvements 检查器、**General 注册**、TagBot tag | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 已创建；`Pkg.add("PiKit")` 可从注册表安装（PR #175351 待合并）；TagBot 在注册后创建 `v0.1.0`；真实 Provider 手工冒烟 | M7 |
+| **M8 发布** | docs、README、julia-improvements 检查器、**General 注册**、TagBot tag | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 已创建；`v0.1.0` 已注册并 tag；`0.1.1` freeze patch 注册中；真实 Provider 手工冒烟 | M7 |
 
 ## 依赖关系 / Dependencies
 

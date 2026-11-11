@@ -133,7 +133,7 @@ function main(args=ARGS)
         print(HELP_TEXT)
         return 0
     elseif opts.version
-        println("pikit 0.1.0")
+        println("pikit ", pkgversion(parentmodule(@__MODULE__)))
         return 0
     elseif opts.list_models !== nothing
         print(list_models_text(opts.list_models))
