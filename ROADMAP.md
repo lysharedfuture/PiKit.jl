@@ -16,7 +16,7 @@
 | `pi-durable` | 持久化会话/任务/文档运行时、可恢复执行 | `PiDurable.jl` | 二期 |
 | `pi-schema` | JSON Schema 2020-12 / draft-7 校验 | `PiSchema.jl` | 一期内部子集；二期独立 |
 | `pi-env` | 远程执行环境（SSH daemon + client） | `PiEnv.jl` | 二期随 durable |
-| `pi-telemetry` | 厂商中立遥测契约 | `PiTelemetry.jl` | 二期接口，三期落地 |
+| `pi-telemetry` | 厂商中立遥测契约 | `PiTelemetry.jl` | 二期 2D 核心包 + AI 接入；三期 exporter |
 | `pi-mcp` | 独立 MCP 客户端 | `PiMCP.jl` | 二期 weakdep |
 | `pi-tui` | 差分渲染 TUI 库 | `PiTUI.jl` | 三期（一期为行式 REPL） |
 | `pi-codemode` | 沙箱 JS，唯一能力是调用注入工具 | 待评估（D1） | 三期 |
@@ -26,20 +26,20 @@
 
 - 一期 v0.1 代码、测试与文档已交付：`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块、三个 Provider、AgentCore 循环、8 个编码工具、会话 v3 子集、压缩/溢出/重试、print/JSON/RPC/REPL、日志与 CLI。
 - 零网络全量测试通过：`PIKIT_AGENT_DIR=$(mktemp -d) julia --project=. -e 'using Pkg; Pkg.test()'`。
-- faux 端到端、JSON/RPC 冒烟通过；真实 `rg`/`fd` 下载与 `.gitignore` 集成冒烟通过。
-- GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；`v0.1.0` tag 与 Release 已发布。
+- faux 端到端、JSON/RPC 冒烟通过；`grep` 使用 `ripgrep_jll`，`find` 在 `fd_jll` 注册前使用临时下载路径；`.gitignore` 集成冒烟通过。
+- GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；手动 `v0.1.0` tag/Release 已移除，注册合并后由 TagBot 创建 tag。
 - 文档已交付：`docs/src/cli.md`、`docs/src/json.md`、`docs/src/sessions.md`、`docs/src/upstream-compat.md`、`docs/src/julia-improvements.md` 与改进记录检查器。
 
 ## 进行中 / In Progress
 
-- **General 注册**：PR [JuliaRegistries/General#175351](https://github.com/JuliaRegistries/General/pull/175351) 已创建；Registry Consistency/Treecheck 通过，剩余 AutoMerge 项为包名相似（`PiKit` vs Pinot/EDKit/PEPit/Pilot/PLSKit/MPSKit），已提交人工审核/合并请求。合并前 `Pkg.add("PiKit")` 不可用。
+- **General 注册**：PR [JuliaRegistries/General#175351](https://github.com/JuliaRegistries/General/pull/175351) 已创建；Registry Consistency/Treecheck 通过；包名相似已由维护者 override；`grep` 已改用 `ripgrep_jll`，`find` 等待 `fd_jll`；注册将重新指向 freeze commit，合并后由 TagBot 创建 `v0.1.0`。合并前 `Pkg.add("PiKit")` 不可用。
 - 旧 PR #175350 已评论标记为 superseded（作者为 `JuliaRegistrator` bot，仓库账号无关闭权限，等待 General 维护者清理）。
 
 ## 已完成变更 / Completed Changes
 
 | 功能 | Change | 状态 |
 |---|---|---|
-| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；GitHub 仓库与 `v0.1.0` Release 已发布；General 注册 #175351 待人工合并 |
+| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；GitHub 仓库已创建；General 注册 #175351 待合并；tag/Release 由 TagBot 在注册后创建 |
 
 ## 待办 / Planned
 
@@ -47,7 +47,7 @@
 
 一期范围：单包 `PiKit`（`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块）、`openai-completions` / `anthropic-messages` / `faux` 三个 Provider、8 个工具（read/bash/powershell/edit/write/grep/find/ls）、会话 v3 子集、print/JSON/RPC/行式 REPL、压缩/溢出/重试、CLI 子集。
 
-**状态：代码、测试、文档与 `v0.1.0` Release 已完成；General 注册 PR #175351 待人工合并，合并前 `Pkg.add("PiKit")` 不可用。**
+**状态：代码、测试、文档已完成；General 注册 PR #175351 待合并；tag/Release 由 TagBot 在注册后创建，合并前 `Pkg.add("PiKit")` 不可用。**
 
 | 功能 | 说明 | Change |
 |---|---|---|
@@ -59,7 +59,7 @@
 | CLI 四模式 | 配置、手写解析、runtime、print/JSON/RPC/REPL | `pikit-julia-port` |
 | 日志 | 方案 C：默认只写文件，`PIKIT_LOG_STDERR=1` 才镜像 stderr；默认 `info`，`debug` 关闭 | `pikit-julia-port` |
 | 开发过程 | 三期通用：每波记录、稳定 ID、检查器与每期发布门禁 | `pikit-julia-port` |
-| 发布 | 文档、`v0.1.0` tag、General 注册 | `pikit-julia-port` |
+| 发布 | 文档、General 注册、TagBot `v0.1.0` tag | `pikit-julia-port` |
 
 **发布策略：一期即提交 General**（`PiKit` 名称已核对未被占用）。以 `0.x` 版本发布并明确 API 未冻结；注册合并后安装方式 `Pkg.add("PiKit")`，此前源码安装使用 `Pkg.develop(path=...)` 或 `Pkg.develop(url="https://github.com/lysharedfuture/PiKit.jl")`。注册 PR #175351 正在等待人工审核/合并。
 
@@ -76,7 +76,7 @@
 | **2A 拆包** | `PiAI.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl`；`PiKit.jl` 变为聚合与 CLI 层；模块间只用公开 API | 三包独立测试绿；PiKit 快照回归与 v0.1 一致；三个包提交 General | `changes/phase2a-package-split` |
 | **2B durable** | `PiDurable.jl`：持久化运行、effect 记录与 `replay(:never\|:safe)`、`deferred` 轮询、崩溃后续跑、`context_edit` 全语义、compaction `details`/`fromHook` | `kill -9` 后可续跑；durable JSONL store 可被上游 `pi-durable` 打开；重放不重复副作用 | `changes/phase2b-durable-runtime` |
 | **2C ai 广度** | `openai-responses`、`google-generative-ai`/vertex、bedrock、mistral、azure、images/classifiers、OAuth/login、long cache | 每 Provider 一套 mock 请求体快照 + 一次真实手工冒烟 | `changes/phase2c-ai-providers` |
-| **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；telemetry 接口 | schema 通过上游 fixture；MCP 连本地 server；遥测可关 | `changes/phase2d-schema-mcp-telemetry` |
+| **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；`PiTelemetry.jl` 核心包 + NOOP/内存/render + AI 请求 span | schema 通过上游 fixture；MCP 连本地 server；遥测包注册、默认关闭、AI span/event/metrics 可断言 | `changes/phase2d-schema-mcp-telemetry` |
 
 依赖：2A 先行；2B/2C/2D 在拆包后并行；2D 的 schema 是 strict tools 的前置（两者都在 2D 收口）。
 
@@ -92,48 +92,40 @@
 
 v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 与协议均有 Julia 对应物；跨版本会话可读；多包可从 General 安装。
 
-## 延期记录 / Deferred（2026-11-08）
+## 未排期与条件项 / Unscheduled & Conditional（2026-11-11）
 
-| 项 | 原因 | 重新评估触发 |
-|---|---|---|
-| 遥测 `PiTelemetry.jl` | 一期不做；二期 2D 接口、三期落地 | 2D 启动，或需要跨会话聚合可观测性 |
-| 全屏 TUI `PiTUI.jl` | 一期行式 REPL；三期 3A | 3A 启动 |
-| 扩展系统 / Pi packages / skills / prompt templates / themes | 三期 3B | 3B 启动 |
-| MCP `PiMCP.jl` | 二期 2D weakdep | 2D 启动，或需要本地 MCP server |
-| codemode | 三期 3D；D1 未定 | 有真实 codemode 工作流需求 |
-| durable `PiDurable.jl` | 二期 2B | 2B 启动，或需要崩溃续跑 |
-| 独立 `PiSchema.jl` | 一期为内部子集；二期 2D | 2D 启动，或外部需要单独依赖 schema |
-| `worker_tools.jl` | 仅作二期设计参考，不进入一期 | 二期需要 Julia worker 执行模型 |
-| OAuth/login | 二期 2C | 2C 启动 |
-| HTML/share 导出 | 3E 候选，不承诺 | 有分享/导出需求 |
-| 图片缩放 | 3E 候选，不承诺 | 有图片交互需求 |
-| branch summarization | 3E 候选，不承诺 | 有长分支会话需求 |
-| virtual models | 3E 候选，不承诺 | 有多模型聚合需求 |
-| `agent/src/proxy.ts` | 一期不移植，二期按需 | 有服务器代理入口需求 |
-| `context_edit` 替换语义 | 一期只读 `replacement=null`；二期 2B | 2B 启动 |
-| `Tool.replay` / `output_schema` | 二期 | 2B/2C 启动 |
-| `deferred` 响应轮询 | 一期只透传旧数据；二期 2B | 2B 启动 |
-| `compaction.details` / `fromHook` | 一期只读保留在 `extra`；二期 2B | 2B 启动 |
-| `fetch` / `onProviderStreamEvent` / `transport` / websocket | 一期不建模 | 有客户端注入、原始事件或 WebSocket 需求 |
-| `chord` / `evals` | 默认不移植（D5）；evals 用 Julia 测试框架替代 | 有对象运行时或评测框架需求 |
+本表只记录**未进入任何已承诺阶段**的项。已交付项见“已完成变更”；已排到二/三期的内容见阶段表，不再在本表重复。`chord`/`evals` 属于非目标（D5），见文末。
+
+| 项 | 性质 | 为什么未排期 | 触发条件 | 触发后 |
+|---|---|---|---|---|
+| HTML/share 导出 | 3E 候选 | 不承诺交付 | 有分享/导出需求 | 3E |
+| 图片缩放 | 3E 候选 | 不承诺交付 | 有图片交互需求 | 3E |
+| branch summarization | 3E 候选 | 不承诺交付 | 有长分支会话需求 | 3E |
+| virtual models | 3E 候选 | 不承诺交付 | 有多模型聚合需求 | 3E |
+| `agent/src/proxy.ts` | 条件项 | 一期不移植；二期未排期 | 有服务器代理入口需求 | 待定 |
+| `fetch` / `transport` / websocket | 条件项 | 一期不建模；`onProviderStreamEvent` 已在 2C | 有客户端注入/原始事件/WebSocket 需求 | 待定 |
+
+## 设计参考 / Design References
+
+- `worker_tools.jl`（LLMTools/Agentif）：Julia worker 池、`remote_eval`、输出投影、worker 生命周期。仅作 2B/3C/3D 评估参考，不承诺交付；触发条件：需要 Julia worker 执行模型。
 
 ## 已知缺陷 / Known Issues
 
-- **General 注册未合并**：PR #175351 的 Registry Consistency/Treecheck 已通过，但 AutoMerge 因包名相似（Pinot/EDKit/PEPit/Pilot/PLSKit/MPSKit）需要人工审核；合并前不能通过 `Pkg.add("PiKit")` 安装。
+- **General 注册未合并**：PR #175351 的 Registry Consistency/Treecheck 已通过，包名相似已由维护者 override；当前等待指向 freeze commit 的更新与合并；合并前不能通过 `Pkg.add("PiKit")` 安装。
 - **Windows PowerShell 实机未验证**：当前环境为 Linux；非 Windows 返回错误路径已有测试，`powershell` 的实际 Windows 冒烟待补。
 - **REPL TTY 手工验证未执行**：自动测试覆盖 stdin/print 路径；真实 TTY 下的斜杠命令、流式渲染与 Ctrl+C 中止需手工冒烟。
 - 旧 General PR #175350 仍处于 open 状态，等待维护者关闭；新 PR #175351 为有效注册单。
 
 ## 里程碑 / Milestones
 
-- **一期 v0.1**：**已完成 M0–M8 的代码/测试/文档与 `v0.1.0` Release；General 注册 PR #175351 待人工合并**（`change: pikit-julia-port`）。
+- **一期 v0.1**：**已完成 M0–M7 与 M8 的代码/测试/文档；General 注册 PR #175351 待合并；TagBot 将在注册后创建 `v0.1.0`**（`change: pikit-julia-port`）。
 - **二期 v0.2–v0.4**：规划已建档，未编码（2A `phase2a-package-split`；2B `phase2b-durable-runtime`；2C `phase2c-ai-providers`；2D `phase2d-schema-mcp-telemetry`）。
 - **三期 v0.5–v1.0**：未开始（3A–3E）。
 - **改进记录门禁**：一期 M8 `--phase 1 --strict`；二期各子阶段收口 `--phase 2 --strict`；三期 v1.0 `--all --strict`。
 
 ### 一期里程碑 M0–M8
 
-**M0–M7 已完成；M8 的文档、tag、Release 与 GitHub 仓库已完成，General 注册 PR #175351 待人工合并。**
+**M0–M7 已完成；M8 的文档与 GitHub 仓库已完成；General 注册 PR #175351 待合并，tag/Release 由 TagBot 在注册后创建。**
 
 | 里程碑 | 范围 | 退出标准（可执行） | 依赖 |
 |---|---|---|---|
@@ -145,7 +137,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 | **M5 会话+E2E** | session（header 校验/尾部修复/`context_edit`/build_context）、system_prompt、runtime、config、print | v3 fixture 往返；compaction+`context_edit` 重建；`-p` faux 端到端 | M3、M4 |
 | **M6 协议模式** | JSON 事件全集、RPC 命令与 `disposition`、REPL、CLI 全量 flag | JSON 快照匹配 `docs/src/json.md`；RPC 冒烟；REPL 手工 | M5 |
 | **M7 压缩与恢复** | compaction（usage 锚点/切点/entry 字段）、溢出恢复、retry 集成 | 阈值压缩、413 溢出重试、配额 429 不重试三条端到端 | M6 |
-| **M8 发布** | docs、README、julia-improvements 检查器、tag、**General 注册** | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 与 `v0.1.0` Release（已完成）；`Pkg.add("PiKit")` 可从注册表安装（PR #175351 待人工合并）；真实 Provider 手工冒烟 | M7 |
+| **M8 发布** | docs、README、julia-improvements 检查器、**General 注册**、TagBot tag | `julia scripts/check-julia-improvements.jl --phase 1 --strict --upstream .upstream` 通过（已完成）；GitHub 仓库 `lysharedfuture/PiKit.jl` 已创建；`Pkg.add("PiKit")` 可从注册表安装（PR #175351 待合并）；TagBot 在注册后创建 `v0.1.0`；真实 Provider 手工冒烟 | M7 |
 
 ## 依赖关系 / Dependencies
 
@@ -175,11 +167,12 @@ ripgrep_jll（grep）；fd_jll（find；待 Yggdrasil）
 | D1 | `codemode` 依赖 JS 沙箱：嵌入 node/deno 子进程，还是只提供 Julia 子集/子进程工具？ | 三期 | 先不承诺 1:1；若必须兼容 pi 脚本，走外部 JS 运行时 | 有真实 codemode 工作流需求 |
 | D2 | TUI 自研差分渲染，还是包 `TerminalMenus`/`TextUserInterfaces`？ | 三期 | 自研渲染层、复用已有终端后端 | 3A 启动时按维护成本再定 |
 | D3 | durable 的 effect 持久化粒度与 fsync 策略（每次工具调用 vs 每 turn） | 二期 2B | 每次工具调用记 effect，崩溃恢复以 turn 为边界 | 2B 故障注入测试结果 |
-| D4 | `PiSchema` 独立成包还是并入 `PiAI` | 二期 2D | 独立（与上游包边界一致） | 外部使用者需要单独依赖 schema |
 | D5 | `chord`/`evals` 是否移植 | 三期后 | 默认不移植；evals 用 Julia 测试框架替代 | 有跨进程对象运行时或评测框架需求 |
-| D6 | 拆包后旧 `PiKit` 的定位 | 二期 2A | 保留为 CLI/聚合层，内部改为依赖三包 | 2A 拆包完成后的依赖图审查 |
 
 已定：**一期提交 General**；二期 2A 完成后再注册三个子包；v1.0 前冻结 API。
+
+- **D4 已定（2D）**：`PiSchema` 独立成包，与上游 `pi-schema` 包边界一致；`PiAI` 直接依赖它，`PiAgentCore`/`PiDurable` 通过 `PiAI` 或显式依赖使用。并入 `PiAI` 的方案否决：会让只依赖 schema 的外部项目被迫拉入 HTTP/JSON/AI 依赖，并破坏上游包边界。
+- **D6 已定（2A）**：保留 `PiKit` 为 CLI/聚合层。它只承载 `(@main)(args)`/`main()`、CLI 解析与 print/JSON/RPC/REPL 模式、配置与信任、日志 sink、应用装配（auth/durable/MCP/TUI 等）、发布元数据与兼容别名；不新增核心 AI/agent/工具/会话 API。`PiCodingAgent` 保持纯库，不导出 `main`、不依赖 `PiKit`。`PiKit` 不是第四个核心包；v1.0 API 对等以 `PiAI`/`PiAgentCore`/`PiCodingAgent`/`PiDurable` 为准。
 
 ## 风险 / Risks
 

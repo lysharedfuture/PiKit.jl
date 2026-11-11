@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -eu
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-exec julia --startup-file=no --project="$DIR" -e 'using PiKit; exit(PiKit.main(ARGS))' -- "$@"
+exec julia --startup-file=no --project="$DIR" -e 'using PiKit; exit(PiKit.main())' -- "$@"
