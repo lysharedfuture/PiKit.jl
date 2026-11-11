@@ -152,7 +152,45 @@
 
 ## 二期（v0.2–v0.4）
 
-未开始。2A–2D 启动前须在 `specs/development-process/spec.md` 登记必选主题与 ID，再按同一格式记录，每波至少 3 条。
+2A–2D 主题已在 `specs/development-process/spec.md` 登记；各条目在该 wave 收口前补齐四字段，未收口的条目只有标题。
+
+## 2A 包边界与依赖方向
+
+### 2A-01 包边界与依赖方向
+
+### 2A-02 类型身份与模块别名
+
+### 2A-03 日志安装点与库设计
+
+## 2B 持久运行时
+
+### 2B-01 持久存储格式与单写者
+
+### 2B-02 effect 三明治与 replay 策略
+
+### 2B-03 deferred 轮询与崩溃恢复
+
+### 2B-04 文档事务子集与 chord 替代
+
+## 2C AI Provider 扩展
+
+### 2C-01 HTTP/SSE 手写 vs 厂商 SDK
+
+### 2C-02 OAuth 与凭据存储
+
+### 2C-03 长缓存与 provider 能力矩阵
+
+### 2C-04 AWS SigV4 与二进制 event-stream
+
+## 2D Schema、MCP 与遥测
+
+### 2D-01 JSON Schema 编译与 unevaluated 语义
+
+### 2D-02 ECMA 正则兼容
+
+### 2D-03 MCP 传输与工具桥接
+
+### 2D-04 遥测显式上下文与脱敏
 
 ## 三期（v0.5–v1.0）
 

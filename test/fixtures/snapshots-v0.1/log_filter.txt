@@ -1,0 +1,49 @@
+spec=info group=ai_json level=debug enabled=false
+spec=info group=ai_json level=info enabled=true
+spec=info group=ai_json level=error enabled=true
+spec=info group=pikit_logging level=debug enabled=false
+spec=info group=pikit_logging level=info enabled=true
+spec=info group=pikit_logging level=error enabled=true
+spec=info group=unknown_tag level=debug enabled=false
+spec=info group=unknown_tag level=info enabled=true
+spec=info group=unknown_tag level=error enabled=true
+spec=debug group=ai_json level=debug enabled=true
+spec=debug group=ai_json level=info enabled=true
+spec=debug group=ai_json level=error enabled=true
+spec=debug group=pikit_logging level=debug enabled=true
+spec=debug group=pikit_logging level=info enabled=true
+spec=debug group=pikit_logging level=error enabled=true
+spec=debug group=unknown_tag level=debug enabled=true
+spec=debug group=unknown_tag level=info enabled=true
+spec=debug group=unknown_tag level=error enabled=true
+spec=pikit_logging=error,ai_json=debug group=ai_json level=debug enabled=true
+spec=pikit_logging=error,ai_json=debug group=ai_json level=info enabled=true
+spec=pikit_logging=error,ai_json=debug group=ai_json level=error enabled=true
+spec=pikit_logging=error,ai_json=debug group=pikit_logging level=debug enabled=false
+spec=pikit_logging=error,ai_json=debug group=pikit_logging level=info enabled=false
+spec=pikit_logging=error,ai_json=debug group=pikit_logging level=error enabled=true
+spec=pikit_logging=error,ai_json=debug group=unknown_tag level=debug enabled=false
+spec=pikit_logging=error,ai_json=debug group=unknown_tag level=info enabled=true
+spec=pikit_logging=error,ai_json=debug group=unknown_tag level=error enabled=true
+min_enabled=Info
+[info] [ai_json] probe
+[error] [ai_json] probe
+[info] [pikit_logging] probe
+[error] [pikit_logging] probe
+[info] [unknown_tag] probe
+[error] [unknown_tag] probe
+[debug] [ai_json] probe
+[info] [ai_json] probe
+[error] [ai_json] probe
+[debug] [pikit_logging] probe
+[info] [pikit_logging] probe
+[error] [pikit_logging] probe
+[debug] [unknown_tag] probe
+[info] [unknown_tag] probe
+[error] [unknown_tag] probe
+[debug] [ai_json] probe
+[info] [ai_json] probe
+[error] [ai_json] probe
+[error] [pikit_logging] probe
+[info] [unknown_tag] probe
+[error] [unknown_tag] probe
