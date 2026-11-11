@@ -27,7 +27,7 @@
 
 ### Requirement: Required improvement topics
 
-规范 SHALL 为每个 phase 的每个 wave 维护必选主题与稳定 ID；记录条目标题 MUST 使用这些 ID；主题 MUST 全部覆盖。Phase 1 的 W1–W5 主题见下表；Phase 2（2A–2D）与 Phase 3（3A–3E）的必选主题 MUST 在各 wave 启动前补入本规范，未登记不得启动。
+规范 SHALL 为每个 phase 的每个 wave 维护必选主题与稳定 ID；记录条目标题 MUST 使用这些 ID；主题 MUST 全部覆盖。Phase 1 的 W1–W5 与 Phase 2 的 2A–2D 主题见下表；Phase 3（3A–3E）的必选主题 MUST 在各 wave 启动前补入本规范，未登记不得启动。
 
 #### Scenario: W1 topics are covered
 
@@ -63,15 +63,26 @@
 | 1 | W5 | W5-01 | 会话树/压缩 token 估算 |
 | 1 | W5 | W5-02 | v3 兼容读取的未知 entry 策略 |
 | 1 | W5 | W5-03 | 补充主题（实现期确定，≥1 条） |
+| 2 | 2A | 2A-01 | 包边界与依赖方向 |
+| 2 | 2A | 2A-02 | 类型身份与模块别名 |
+| 2 | 2A | 2A-03 | 日志安装点与库设计 |
+| 2 | 2B | 2B-01 | 持久存储格式与单写者 |
+| 2 | 2B | 2B-02 | effect 三明治与 replay 策略 |
+| 2 | 2B | 2B-03 | deferred 轮询与崩溃恢复 |
+| 2 | 2B | 2B-04 | 文档事务子集与 chord 替代 |
+| 2 | 2C | 2C-01 | HTTP/SSE 手写 vs 厂商 SDK |
+| 2 | 2C | 2C-02 | OAuth 与凭据存储 |
+| 2 | 2C | 2C-03 | 长缓存与 provider 能力矩阵 |
+| 2 | 2C | 2C-04 | AWS SigV4 与二进制 event-stream |
+| 2 | 2D | 2D-01 | JSON Schema 编译与 unevaluated 语义 |
+| 2 | 2D | 2D-02 | ECMA 正则兼容 |
+| 2 | 2D | 2D-03 | MCP 传输与工具桥接 |
+| 2 | 2D | 2D-04 | 遥测显式上下文与脱敏 |
 
-Phase 2/3 登记表（启动前必须补入主题与 ID）：
+Phase 3 登记表（启动前必须补入主题与 ID）：
 
 | Phase | Wave | Status |
 |---|---|---|
-| 2 | 2A | 启动前登记 |
-| 2 | 2B | 启动前登记 |
-| 2 | 2C | 启动前登记 |
-| 2 | 2D | 启动前登记 |
 | 3 | 3A | 启动前登记 |
 | 3 | 3B | 启动前登记 |
 | 3 | 3C | 启动前登记 |

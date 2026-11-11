@@ -1,0 +1,21 @@
+name = "PiAgentCore"
+uuid = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
+authors = ["PiKit contributors"]
+version = "0.2.0"
+
+[deps]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+PiAI = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
+
+[sources]
+PiAI = {path = "../PiAI"}
+
+[compat]
+PiAI = "0.2"
+julia = "1.13"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

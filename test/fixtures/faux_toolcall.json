@@ -1,0 +1,4 @@
+[
+  { "toolCall": { "name": "read", "arguments": { "path": "hello.txt" }, "id": "call_snapshot" } },
+  { "content": "snapshot summary", "stopReason": "stop" }
+]
