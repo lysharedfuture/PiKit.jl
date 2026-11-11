@@ -4,10 +4,10 @@ using Logging
 ENV["PIKIT_OFFLINE"] = "1"
 ENV["PIKIT_AGENT_DIR"] = mktempdir()
 
-using PiAI
+using PiAISDK
 using PiAgentCore
 
-const AI = PiAI
+const AI = PiAISDK
 const AC = PiAgentCore
 
 include("agent_core/loop.jl")

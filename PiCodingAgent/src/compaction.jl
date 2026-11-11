@@ -78,16 +78,16 @@ function _content_chars(content)
     content isa AbstractString && return length(content)
     chars = 0
     for c in content
-        if c isa PiAI.TextContent
+        if c isa PiAISDK.TextContent
             chars += length(c.text)
-        elseif c isa PiAI.ImageContent
+        elseif c isa PiAISDK.ImageContent
             chars += ESTIMATED_IMAGE_CHARS
         end
     end
     return chars
 end
 
-function estimate_tokens(m::PiAI.SystemMessage)
+function estimate_tokens(m::PiAISDK.SystemMessage)
     chars = _content_chars(m.content)
     if m.sections !== nothing
         for (_, v) in m.sections
@@ -97,31 +97,31 @@ function estimate_tokens(m::PiAI.SystemMessage)
     isempty(m.tools_added) || (chars += length(json_write(m.tools_added)))
     return ceil(Int, chars / 4)
 end
-estimate_tokens(m::PiAI.UserMessage) = ceil(Int, _content_chars(m.content) / 4)
-function estimate_tokens(m::PiAI.AssistantMessage)
+estimate_tokens(m::PiAISDK.UserMessage) = ceil(Int, _content_chars(m.content) / 4)
+function estimate_tokens(m::PiAISDK.AssistantMessage)
     chars = 0
     for c in m.content
-        if c isa PiAI.TextContent
+        if c isa PiAISDK.TextContent
             chars += length(c.text)
-        elseif c isa PiAI.ThinkingContent
+        elseif c isa PiAISDK.ThinkingContent
             chars += length(c.thinking)
-        elseif c isa PiAI.ToolCall
+        elseif c isa PiAISDK.ToolCall
             chars += length(c.name) + length(json_write(c.arguments))
         end
     end
     return ceil(Int, chars / 4)
 end
-estimate_tokens(m::PiAI.ToolResultMessage) = ceil(Int, _content_chars(m.content) / 4)
+estimate_tokens(m::PiAISDK.ToolResultMessage) = ceil(Int, _content_chars(m.content) / 4)
 estimate_tokens(m::BashExecutionMessage) = ceil(Int, (length(m.command) + length(m.output)) / 4)
 estimate_tokens(m::CompactionSummaryMessage) = ceil(Int, length(m.summary) / 4)
-estimate_tokens(::PiAI.AbstractMessage) = 0
+estimate_tokens(::PiAISDK.AbstractMessage) = 0
 
 function last_usage_info(messages)
     for i in length(messages):-1:1
         m = messages[i]
-        m isa PiAI.AssistantMessage || continue
+        m isa PiAISDK.AssistantMessage || continue
         m.stop_reason in ("error", "aborted") && continue
-        total = PiAI.token_total(m.usage)
+        total = PiAISDK.token_total(m.usage)
         total > 0 || continue
         return (index=i, tokens=total)
     end
@@ -142,12 +142,12 @@ function should_compact(context_tokens::Int, context_window::Int, reserve_tokens
 end
 
 function _is_cut_point(m)
-    return m isa PiAI.UserMessage || m isa PiAI.AssistantMessage || m isa BashExecutionMessage ||
+    return m isa PiAISDK.UserMessage || m isa PiAISDK.AssistantMessage || m isa BashExecutionMessage ||
            m isa CompactionSummaryMessage
 end
 
 function _is_turn_start(m)
-    return m isa PiAI.UserMessage || m isa BashExecutionMessage || m isa CompactionSummaryMessage
+    return m isa PiAISDK.UserMessage || m isa BashExecutionMessage || m isa CompactionSummaryMessage
 end
 
 function find_cut_point(messages; keep_recent_tokens=20_000)
@@ -164,7 +164,7 @@ function find_cut_point(messages; keep_recent_tokens=20_000)
         cut += 1
     end
     cut > length(messages) && (cut = max(1, length(messages)))
-    if cut <= length(messages) && messages[cut] isa PiAI.AssistantMessage
+    if cut <= length(messages) && messages[cut] isa PiAISDK.AssistantMessage
         j = cut - 1
         while j >= 1 && !_is_turn_start(messages[j])
             j -= 1
@@ -175,24 +175,24 @@ function find_cut_point(messages; keep_recent_tokens=20_000)
 end
 
 function _render_for_summary(m)
-    if m isa PiAI.SystemMessage
+    if m isa PiAISDK.SystemMessage
         parts = String[]
         m.content isa AbstractString ? push!(parts, m.content) :
-            append!(parts, [c.text for c in m.content if c isa PiAI.TextContent])
+            append!(parts, [c.text for c in m.content if c isa PiAISDK.TextContent])
         m.sections === nothing || append!(parts, [v for (_, v) in m.sections if v !== nothing])
         return "System: " * join(parts, "\n")
-    elseif m isa PiAI.UserMessage
-        return "User: " * (m.content isa AbstractString ? m.content : join([c.text for c in m.content if c isa PiAI.TextContent], "\n"))
-    elseif m isa PiAI.AssistantMessage
+    elseif m isa PiAISDK.UserMessage
+        return "User: " * (m.content isa AbstractString ? m.content : join([c.text for c in m.content if c isa PiAISDK.TextContent], "\n"))
+    elseif m isa PiAISDK.AssistantMessage
         parts = String[]
         for c in m.content
-            c isa PiAI.TextContent && push!(parts, c.text)
-            c isa PiAI.ThinkingContent && push!(parts, "[thinking] " * c.thinking)
-            c isa PiAI.ToolCall && push!(parts, "[tool $(c.name)] " * json_write(c.arguments))
+            c isa PiAISDK.TextContent && push!(parts, c.text)
+            c isa PiAISDK.ThinkingContent && push!(parts, "[thinking] " * c.thinking)
+            c isa PiAISDK.ToolCall && push!(parts, "[tool $(c.name)] " * json_write(c.arguments))
         end
         return "Assistant: " * join(parts, "\n")
-    elseif m isa PiAI.ToolResultMessage
-        return "Tool result ($(m.tool_name)): " * join([c.text for c in m.content if c isa PiAI.TextContent], "\n")
+    elseif m isa PiAISDK.ToolResultMessage
+        return "Tool result ($(m.tool_name)): " * join([c.text for c in m.content if c isa PiAISDK.TextContent], "\n")
     elseif m isa BashExecutionMessage
         return "Bash: " * m.command * "\n" * m.output
     elseif m isa CompactionSummaryMessage
@@ -201,7 +201,7 @@ function _render_for_summary(m)
     return ""
 end
 
-function summarize(model::PiAI.Model, messages, opts::PiAI.StreamOptions, retry::RetryPolicy,
+function summarize(model::PiAISDK.Model, messages, opts::PiAISDK.StreamOptions, retry::RetryPolicy,
                     emit; signal=nothing, previous_summary=nothing)
     conversation = join((_render_for_summary(m) for m in messages), "\n\n")
     prompt = conversation * "\n\n# Instructions\n" *
@@ -211,24 +211,24 @@ function summarize(model::PiAI.Model, messages, opts::PiAI.StreamOptions, retry:
     max_attempts = retry.enabled ? retry.max_attempts + 1 : 1
     while true
         attempt += 1
-        ctx = PiAI.LLMContext(PiAI.AbstractMessage[PiAI.SystemMessage(""), PiAI.UserMessage(prompt)])
-        stream_opts = PiAI.StreamOptions(
+        ctx = PiAISDK.LLMContext(PiAISDK.AbstractMessage[PiAISDK.SystemMessage(""), PiAISDK.UserMessage(prompt)])
+        stream_opts = PiAISDK.StreamOptions(
             api_key=opts.api_key, signal=signal, headers=opts.headers,
             max_tokens=min(model.max_tokens, 8192), reasoning="off",
             session_id=opts.session_id, timeout_ms=opts.timeout_ms)
-        response = PiAI.result(PiAI.stream(model, ctx, stream_opts))
+        response = PiAISDK.result(PiAISDK.stream(model, ctx, stream_opts))
         if response.stop_reason == "stop"
-            text = join([c.text for c in response.content if c isa PiAI.TextContent], "")
+            text = join([c.text for c in response.content if c isa PiAISDK.TextContent], "")
             return (ok=true, summary=text, usage=response.usage, error=nothing)
         end
         err = response.stop_reason == "error" ? something(response.error_message, "Unknown error") :
               response.stop_reason == "length" ? "generation hit the token cap and the summary is incomplete" :
               "summarization aborted"
         if attempt < max_attempts && response.stop_reason == "error" &&
-           PiAI.is_retryable_error_text(err)
+           PiAISDK.is_retryable_error_text(err)
             delay = retry_delay_ms(retry, attempt)
             emit((type="summarization_retry_start", attempt=attempt, delayMs=delay, errorMessage=err))
-            PiAI.sleep_abortable(delay / 1000, signal)
+            PiAISDK.sleep_abortable(delay / 1000, signal)
             emit((type="summarization_retry_end", success=false, attempt=attempt))
             continue
         end
@@ -236,7 +236,7 @@ function summarize(model::PiAI.Model, messages, opts::PiAI.StreamOptions, retry:
     end
 end
 
-function compact!(sm::SessionManager, model::PiAI.Model, opts::PiAI.StreamOptions,
+function compact!(sm::SessionManager, model::PiAISDK.Model, opts::PiAISDK.StreamOptions,
                   retry::RetryPolicy; reason::String="manual", keep_recent_tokens=20_000,
                   reserve_tokens=16_384, signal=nothing, emit=(ev)->nothing)
     messages = build_context(sm)
@@ -261,14 +261,14 @@ function compact!(sm::SessionManager, model::PiAI.Model, opts::PiAI.StreamOption
     end
     result = summarize(model, to_summarize, opts, retry, emit; signal=signal, previous_summary=previous)
     if !result.ok
-        aborted = signal !== nothing && PiAI.is_aborted(signal)
+        aborted = signal !== nothing && PiAISDK.is_aborted(signal)
         emit((type="compaction_end", reason=reason, result=nothing, aborted=aborted,
               willRetry=false, errorMessage=result.error))
         return nothing
     end
     system_message = nothing
     for m in messages
-        m isa PiAI.SystemMessage && (system_message = m)
+        m isa PiAISDK.SystemMessage && (system_message = m)
     end
     first_kept_id = nothing
     for entry in sm.entries

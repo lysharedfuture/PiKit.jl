@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "30ed479f17eeb8ebb782850b1889bef58a7e76e6"
+project_hash = "47853d5bb8802086990b184d1dc9f0d045ff8671"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -144,14 +144,14 @@ registries = "General"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "3.0.6"
 
-[[deps.PiAI]]
+[[deps.PiAISDK]]
 deps = ["Dates", "HTTP", "JSON", "Logging", "Random"]
-path = "../PiAI"
+path = "../PiAISDK"
 uuid = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
 version = "0.2.0"
 
 [[deps.PiAgentCore]]
-deps = ["Logging", "PiAI"]
+deps = ["Logging", "PiAISDK"]
 path = "."
 uuid = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 version = "0.2.0"

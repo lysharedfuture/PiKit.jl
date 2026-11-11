@@ -1,8 +1,8 @@
 const LOG_TAG = "agent_core_loop"
 
-function _build_stream_options(config::AgentLoopConfig, model::PiAI.Model, signal)
+function _build_stream_options(config::AgentLoopConfig, model::PiAISDK.Model, signal)
     api_key = config.get_api_key === nothing ? nothing : config.get_api_key(model)
-    return PiAI.StreamOptions(
+    return PiAISDK.StreamOptions(
         api_key=api_key,
         signal=signal,
         headers=Dict{String,Union{Nothing,String}}(String(k) => String(v) for (k, v) in config.headers),
@@ -17,7 +17,7 @@ end
 
 function _assistant_from_events(final_msg, partial, model)
     final_msg !== nothing && return final_msg
-    partial === nothing && return PiAI.empty_assistant(model)
+    partial === nothing && return PiAISDK.empty_assistant(model)
     return partial
 end
 
@@ -25,7 +25,7 @@ function stream_assistant_response!(context::AgentContext, new_messages, config:
                                     signal, emit)
     messages = context.messages
     messages_for_llm = config.convert_to_llm(messages)
-    llm_context = PiAI.normalize_context(PiAI.LLMContext(messages_for_llm))
+    llm_context = PiAISDK.normalize_context(PiAISDK.LLMContext(messages_for_llm))
     if config.transform_context !== nothing
         transformed = config.transform_context(llm_context)
         transformed === nothing || (llm_context = transformed)
@@ -53,15 +53,15 @@ function stream_assistant_response!(context::AgentContext, new_messages, config:
     start_emitted = false
     seen_start = false
     for ev in stream_obj
-        if ev isa PiAI.StartEvent
+        if ev isa PiAISDK.StartEvent
             seen_start = true
             partial = ev.partial
             push!(messages, partial)
             push!(new_messages, partial)
             emit(MessageStartEvent(partial))
             start_emitted = true
-        elseif ev isa PiAI.DoneEvent || ev isa PiAI.ErrorEvent
-            final_msg = ev isa PiAI.DoneEvent ? ev.message : ev.error
+        elseif ev isa PiAISDK.DoneEvent || ev isa PiAISDK.ErrorEvent
+            final_msg = ev isa PiAISDK.DoneEvent ? ev.message : ev.error
             if !start_emitted
                 partial = final_msg
                 push!(messages, final_msg)
@@ -80,7 +80,7 @@ function stream_assistant_response!(context::AgentContext, new_messages, config:
             emit(MessageEndEvent(final_msg))
         else
             if !start_emitted
-                partial = PiAI.empty_assistant(model)
+                partial = PiAISDK.empty_assistant(model)
                 push!(messages, partial)
                 push!(new_messages, partial)
                 emit(MessageStartEvent(partial))
@@ -111,22 +111,22 @@ function stream_assistant_response!(context::AgentContext, new_messages, config:
 end
 
 function _tool_result_message(call, result::ToolResult, duration_ms)
-    return PiAI.ToolResultMessage(call.id, call.name, result.content;
+    return PiAISDK.ToolResultMessage(call.id, call.name, result.content;
         details=result.details, usage=result.usage, is_error=result.is_error,
         duration_ms=duration_ms)
 end
 
 function _tool_error_result(text; details=nothing)
-    return ToolResult(AbstractContent[PiAI.TextContent(String(text))]; details=details, is_error=true)
+    return ToolResult(AbstractContent[PiAISDK.TextContent(String(text))]; details=details, is_error=true)
 end
 
-function execute_tool_calls(context::AgentContext, assistant::PiAI.AssistantMessage,
+function execute_tool_calls(context::AgentContext, assistant::PiAISDK.AssistantMessage,
                             config::AgentLoopConfig, signal, emit)
-    calls = PiAI.ToolCall[c for c in assistant.content if c isa PiAI.ToolCall]
-    isempty(calls) && return PiAI.ToolResultMessage[], false
+    calls = PiAISDK.ToolCall[c for c in assistant.content if c isa PiAISDK.ToolCall]
+    isempty(calls) && return PiAISDK.ToolResultMessage[], false
 
     tool_map = Dict{String,Tool}(t.name => t for t in context.tools)
-    result_messages = PiAI.ToolResultMessage[]
+    result_messages = PiAISDK.ToolResultMessage[]
     all_terminate = true
 
     if assistant.stop_reason == "length"
@@ -168,7 +168,7 @@ function execute_tool_calls(context::AgentContext, assistant::PiAI.AssistantMess
             end
         end
         try
-            PiAI.validate_arguments(tool.name, tool.parameters, args)
+            PiAISDK.validate_arguments(tool.name, tool.parameters, args)
         catch err
             result = _tool_error_result(sprint(showerror, err))
             push!(prepared, (call=call, tool=tool, args=args, result=result, duration=0))
@@ -200,7 +200,7 @@ function execute_tool_calls(context::AgentContext, assistant::PiAI.AssistantMess
             r = tool.execute(entry.call.id, entry.args, signal, on_update)
             r isa ToolResult ? r : ToolResult(r)
         catch err
-            if err isa InterruptException && signal !== nothing && PiAI.is_aborted(signal)
+            if err isa InterruptException && signal !== nothing && PiAISDK.is_aborted(signal)
                 _tool_error_result("Tool aborted")
             else
                 _tool_error_result(sprint(showerror, err))
@@ -272,10 +272,10 @@ function _apply_prepare_next_turn(config, message, tool_results)
     if config.prepare_next_turn !== nothing
         prepared = config.prepare_next_turn((message=message, tool_results=tool_results), nothing)
         if prepared !== nothing && hasproperty(prepared, :messages) && prepared.messages !== nothing
-            return PiAI.AbstractMessage[prepared.messages...]
+            return PiAISDK.AbstractMessage[prepared.messages...]
         end
     end
-    return PiAI.AbstractMessage[]
+    return PiAISDK.AbstractMessage[]
 end
 
 function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
@@ -283,7 +283,7 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
     _validate_tool_execution(config)
     config.stream_fn = stream_fn
     messages = context.messages
-    produced = PiAI.AbstractMessage[]
+    produced = PiAISDK.AbstractMessage[]
     emit(AgentStartEvent())
     try
         for m in new_messages
@@ -298,11 +298,11 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
             emit(TurnStartEvent())
             assistant = stream_assistant_response!(context, produced, config, signal, emit)
             if assistant.stop_reason in ("error", "aborted")
-                emit(TurnEndEvent(assistant, PiAI.ToolResultMessage[]))
+                emit(TurnEndEvent(assistant, PiAISDK.ToolResultMessage[]))
                 return produced
             end
-            tool_results, all_terminate = PiAI.ToolResultMessage[], false
-            has_tool_calls = any(c -> c isa PiAI.ToolCall, assistant.content)
+            tool_results, all_terminate = PiAISDK.ToolResultMessage[], false
+            has_tool_calls = any(c -> c isa PiAISDK.ToolCall, assistant.content)
             if assistant.stop_reason == "toolUse" ||
                (assistant.stop_reason == "length" && has_tool_calls)
                 tool_results, all_terminate = execute_tool_calls(context, assistant, config, signal, emit)
@@ -313,8 +313,8 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
                 return produced
             end
             has_more = assistant.stop_reason == "toolUse" && !isempty(tool_results)
-            steering = config.get_steering_messages === nothing ? PiAI.AbstractMessage[] :
-                       PiAI.AbstractMessage[config.get_steering_messages()...]
+            steering = config.get_steering_messages === nothing ? PiAISDK.AbstractMessage[] :
+                       PiAISDK.AbstractMessage[config.get_steering_messages()...]
             if !isempty(steering)
                 for m in steering
                     push!(messages, m)
@@ -329,8 +329,8 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
                 explicit_continuation = false
                 continue
             end
-            follow_up = config.get_follow_up_messages === nothing ? PiAI.AbstractMessage[] :
-                        PiAI.AbstractMessage[config.get_follow_up_messages()...]
+            follow_up = config.get_follow_up_messages === nothing ? PiAISDK.AbstractMessage[] :
+                        PiAISDK.AbstractMessage[config.get_follow_up_messages()...]
             if !isempty(follow_up)
                 for m in follow_up
                     push!(messages, m)
@@ -365,10 +365,10 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
 end
 
 run_agent_loop(prompts, context::AgentContext, config::AgentLoopConfig, signal, emit, stream_fn=config.stream_fn) =
-    run_loop(context, PiAI.AbstractMessage[prompts...], config, signal, emit, stream_fn)
+    run_loop(context, PiAISDK.AbstractMessage[prompts...], config, signal, emit, stream_fn)
 
 run_agent_loop_continue(context::AgentContext, config::AgentLoopConfig, signal, emit, stream_fn=config.stream_fn) =
-    run_loop(context, PiAI.AbstractMessage[], config, signal, emit, stream_fn)
+    run_loop(context, PiAISDK.AbstractMessage[], config, signal, emit, stream_fn)
 
 function declare_tool_changes(context::AgentContext, pending)
     return context

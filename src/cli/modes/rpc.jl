@@ -15,13 +15,13 @@ function _rpc_response(id, command, success; data=nothing, error=nothing)
 end
 
 function _rpc_images(raw)
-    out = PiAI.ImageContent[]
+    out = PiAISDK.ImageContent[]
     raw isa AbstractVector || return out
     for item in raw
         item isa AbstractDict || continue
         data = get(item, "data", nothing)
         mime = get(item, "mimeType", "image/png")
-        data isa AbstractString && push!(out, PiAI.ImageContent(data, mime))
+        data isa AbstractString && push!(out, PiAISDK.ImageContent(data, mime))
     end
     return out
 end
@@ -102,7 +102,7 @@ function _handle_rpc_command(s::AgentSession, d, running::Ref{Union{Nothing,Task
     elseif cmd == "get_state"
         data = get_state(s)
     elseif cmd == "get_messages"
-        data["messages"] = Any[PiAI.message_to_json(m) for m in build_context(s.session)]
+        data["messages"] = Any[PiAISDK.message_to_json(m) for m in build_context(s.session)]
     elseif cmd == "set_model"
         pattern = String(get(d, "model", get(d, "id", "")))
         model = find_model(pattern; provider=get(d, "provider", nothing))
@@ -119,12 +119,12 @@ function _handle_rpc_command(s::AgentSession, d, running::Ref{Union{Nothing,Task
         set_thinking_level!(s, String(get(d, "level", "off")))
         data["level"] = s.thinking_level
     elseif cmd == "cycle_thinking_level"
-        idx = findfirst(==(s.thinking_level), PiAI.THINKING_LEVELS)
-        level = PiAI.THINKING_LEVELS[mod1((idx === nothing ? 1 : idx) + 1, length(PiAI.THINKING_LEVELS))]
+        idx = findfirst(==(s.thinking_level), PiAISDK.THINKING_LEVELS)
+        level = PiAISDK.THINKING_LEVELS[mod1((idx === nothing ? 1 : idx) + 1, length(PiAISDK.THINKING_LEVELS))]
         set_thinking_level!(s, level)
         data["level"] = level
     elseif cmd == "get_available_thinking_levels"
-        data["levels"] = collect(PiAI.THINKING_LEVELS)
+        data["levels"] = collect(PiAISDK.THINKING_LEVELS)
     elseif cmd == "set_steering_mode"
         s.agent.steering.mode = Symbol(get(d, "mode", "one_at_a_time"))
         data["mode"] = String(s.agent.steering.mode)
@@ -177,7 +177,7 @@ function _handle_rpc_command(s::AgentSession, d, running::Ref{Union{Nothing,Task
         _replace_session!(s, sm)
         data["sessionId"] = sm.header.id
     elseif cmd == "get_fork_messages"
-        data["messages"] = Any[PiAI.message_to_json(e.message) for e in s.session.entries if e isa MessageEntry]
+        data["messages"] = Any[PiAISDK.message_to_json(e.message) for e in s.session.entries if e isa MessageEntry]
     elseif cmd == "get_session_stats"
         data["sessionId"] = s.session.header.id
         data["messageCount"] = length(s.agent.state.messages)
@@ -185,7 +185,7 @@ function _handle_rpc_command(s::AgentSession, d, running::Ref{Union{Nothing,Task
     elseif cmd == "get_last_assistant_text"
         last = nothing
         for m in s.agent.state.messages
-            m isa PiAI.AssistantMessage && (last = m)
+            m isa PiAISDK.AssistantMessage && (last = m)
         end
         data["text"] = last === nothing ? nothing : _assistant_text(last)
     elseif cmd == "set_session_name"

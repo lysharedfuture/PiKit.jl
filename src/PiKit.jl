@@ -6,14 +6,14 @@ using Logging
 include("logging.jl")
 
 using PiCodingAgent
-using PiAI: all_models, find_model, json_parse, json_write, load_faux_responses,
+using PiAISDK: all_models, find_model, json_parse, json_write, load_faux_responses,
             register_faux_provider!
-import PiAI
+import PiAISDK
 import PiAgentCore
 
 # v0.1 module paths. The bindings are the packages themselves, so type identity
-# is shared with `using PiAI` / `using PiAgentCore` / `using PiCodingAgent`.
-const AI = PiAI
+# is shared with `using PiAISDK` / `using PiAgentCore` / `using PiCodingAgent`.
+const AI = PiAISDK
 const AgentCore = PiAgentCore
 const CodingAgent = PiCodingAgent
 

@@ -21,8 +21,8 @@ Upstream ships one npm package per layer; PiKit mirrors that mapping:
 
 | PiKit package | Upstream package | Notes |
 |---|---|---|
-| `PiAI` | `@earendil-works/pi-ai` | `HTTP`/`JSON` + stdlib only |
-| `PiAgentCore` | `@earendil-works/pi-agent-core` | depends on `PiAI` |
+| `PiAISDK` | `@earendil-works/pi-ai` | `HTTP`/`JSON` + stdlib only |
+| `PiAgentCore` | `@earendil-works/pi-agent-core` | depends on `PiAISDK` |
 | `PiCodingAgent` | `@earendil-works/pi-coding-agent` (library part) | tools, session, compaction, runtime |
 | `PiKit` | `@earendil-works/pi-coding-agent` (CLI/aggregate part) | `print`/`json`/`rpc`/`repl`, config, log sink |
 
@@ -34,13 +34,13 @@ package free of CLI symbols and puts them in `PiKit` (D6).
 
 | Area | Status | Evidence |
 |---|---|---|
-| AI content/message types, JSON codec, `extra` preservation | ported | `PiAI/test/ai/json_codec.jl` |
-| SSE parsing, event stream, abort polling | ported | `PiAI/test/ai/sse.jl`, `PiAI/test/ai/event_stream.jl` |
-| JSON Schema subset (`validate_arguments`) | ported | `PiAI/test/ai/schema.jl` |
-| Model catalog, credentials, retry/overflow classification | ported | `PiAI/test/ai/models.jl`, `PiAI/test/ai/credentials.jl`, `PiAI/test/ai/retry.jl` |
-| `openai-completions` provider | ported (HTTP SSE) | `PiAI/test/ai/openai.jl` |
-| `anthropic-messages` provider | ported (HTTP SSE) | `PiAI/test/ai/anthropic.jl` |
-| `faux` provider | ported | `PiAI/test/ai/faux.jl` |
+| AI content/message types, JSON codec, `extra` preservation | ported | `PiAISDK/test/ai/json_codec.jl` |
+| SSE parsing, event stream, abort polling | ported | `PiAISDK/test/ai/sse.jl`, `PiAISDK/test/ai/event_stream.jl` |
+| JSON Schema subset (`validate_arguments`) | ported | `PiAISDK/test/ai/schema.jl` |
+| Model catalog, credentials, retry/overflow classification | ported | `PiAISDK/test/ai/models.jl`, `PiAISDK/test/ai/credentials.jl`, `PiAISDK/test/ai/retry.jl` |
+| `openai-completions` provider | ported (HTTP SSE) | `PiAISDK/test/ai/openai.jl` |
+| `anthropic-messages` provider | ported (HTTP SSE) | `PiAISDK/test/ai/anthropic.jl` |
+| `faux` provider | ported | `PiAISDK/test/ai/faux.jl` |
 | Agent loop, hooks, parallel tools, queues, abort, listeners | ported | `PiAgentCore/test/agent_core/*` |
 | `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`, find via `fd_jll`) | `PiCodingAgent/test/coding/*` |
 | Session v3 read/write/fork, unknown entries, `context_edit: null` | ported | `PiCodingAgent/test/coding/session.jl` |

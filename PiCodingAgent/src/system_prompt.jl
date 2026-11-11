@@ -126,5 +126,5 @@ end
 function build_system_message(cwd::String; kwargs...)
     sections = build_system_sections(cwd; kwargs...)
     cleaned = Pair{String,Union{String,Nothing}}[p for p in sections if p.first != "preamble"]
-    return PiAI.SystemMessage(""; sections=cleaned)
+    return PiAISDK.SystemMessage(""; sections=cleaned)
 end

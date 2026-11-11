@@ -1,7 +1,7 @@
 module PiAgentCore
 
 using Logging
-using PiAI
+using PiAISDK
 
 include("types.jl")
 include("loop.jl")

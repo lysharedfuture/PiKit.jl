@@ -1,12 +1,12 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-PiAI = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
+PiAISDK = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
 PiAgentCore = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 PiCodingAgent = "0b8fd38c-6e68-41ee-b4d7-56f7890dc08d"
 PiKit = "31a94650-92d9-47a7-b751-fcb2edf0c25a"
 
 [sources]
-PiAI = {path = "../PiAI"}
+PiAISDK = {path = "../PiAISDK"}
 PiAgentCore = {path = "../PiAgentCore"}
 PiCodingAgent = {path = "../PiCodingAgent"}
 PiKit = {path = ".."}

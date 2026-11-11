@@ -37,7 +37,7 @@ function _read_if_exists(path)
 end
 
 function default_bash_exec(command::String, cwd::String; on_data=nothing,
-                           signal::Union{Nothing,PiAI.AbortToken}=nothing,
+                           signal::Union{Nothing,PiAISDK.AbortToken}=nothing,
                            timeout::Union{Nothing,Float64}=nothing,
                            env::Union{Nothing,Dict{String,String}}=nothing,
                            shell_path::Union{Nothing,String}=nothing)
@@ -67,7 +67,7 @@ function default_bash_exec(command::String, cwd::String; on_data=nothing,
     timed_out = false
     aborted = false
     while process_running(process)
-        if signal !== nothing && PiAI.is_aborted(signal)
+        if signal !== nothing && PiAISDK.is_aborted(signal)
             kill_process_tree(Base.Libc.getpid(process))
             aborted = true
             break
@@ -155,7 +155,7 @@ function bash_tool(cwd::String; operations::BashOperations=DEFAULT_BASH_OPERATIO
         end
         update_cb = on_update === nothing ? nothing : output -> begin
             trunc = truncate_tail(output)
-            on_update(Dict{String,Any}("content" => Any[PiAI.to_json(TextContent(trunc.content))],
+            on_update(Dict{String,Any}("content" => Any[PiAISDK.to_json(TextContent(trunc.content))],
                                        "details" => Dict{String,Any}()))
         end
         result = try

@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "be1afb8ce586184660a6074a6a95172e8dd56889"
+project_hash = "d3e2fb4232fbe37bf7c41b22b076a7acb7df910e"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -144,26 +144,26 @@ registries = "General"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "3.0.6"
 
-[[deps.PiAI]]
+[[deps.PiAISDK]]
 deps = ["Dates", "HTTP", "JSON", "Logging", "Random"]
-path = "PiAI"
+path = "PiAISDK"
 uuid = "9de19040-de4d-4d6c-8f46-3781ce430fcc"
 version = "0.2.0"
 
 [[deps.PiAgentCore]]
-deps = ["Logging", "PiAI"]
+deps = ["Logging", "PiAISDK"]
 path = "PiAgentCore"
 uuid = "d1542b5d-b113-412f-adf4-78ec6fbb7806"
 version = "0.2.0"
 
 [[deps.PiCodingAgent]]
-deps = ["Base64", "Dates", "HTTP", "Logging", "PiAI", "PiAgentCore", "Random", "UUIDs", "Unicode", "fd_jll", "ripgrep_jll"]
+deps = ["Base64", "Dates", "HTTP", "Logging", "PiAISDK", "PiAgentCore", "Random", "UUIDs", "Unicode", "fd_jll", "ripgrep_jll"]
 path = "PiCodingAgent"
 uuid = "0b8fd38c-6e68-41ee-b4d7-56f7890dc08d"
 version = "0.2.0"
 
 [[deps.PiKit]]
-deps = ["Base64", "Dates", "Logging", "PiAI", "PiAgentCore", "PiCodingAgent"]
+deps = ["Base64", "Dates", "Logging", "PiAISDK", "PiAgentCore", "PiCodingAgent"]
 path = "."
 uuid = "31a94650-92d9-47a7-b751-fcb2edf0c25a"
 version = "0.2.0"
