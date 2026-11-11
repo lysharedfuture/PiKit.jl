@@ -117,7 +117,8 @@ function canonical_lines(text::AbstractString, tmp::String)
 end
 
 const LOG_CHILD = raw"""
-using PiKit, Logging
+import PiKit
+using Logging
 const path = ARGS[1]
 for spec in ("info", "debug", "pikit_logging=error,ai_json=debug")
     logger = PiKit.TagFilterLogger(; file=path, stderr=false, spec=spec)

@@ -1,5 +1,5 @@
 using Documenter
-using PiKit
+import PiKit
 
 makedocs(
     sitename = "PiKit.jl",

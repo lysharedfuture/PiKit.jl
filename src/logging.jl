@@ -1,4 +1,4 @@
-const LOG_TAG = "logging"
+const LOG_TAG = "pikit_logging"
 
 const LOG_LEVEL_NAMES = Dict{String,LogLevel}(
     "debug" => Logging.Debug,
