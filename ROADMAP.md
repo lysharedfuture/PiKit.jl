@@ -119,7 +119,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 ## 里程碑 / Milestones
 
 - **一期 v0.1**：**已完成 M0–M7 与 M8 的代码/测试/文档；`v0.1.0` 已注册并 tag；freeze commit 以 `0.1.1` patch 注册中**（`change: pikit-julia-port`）。
-- **二期 v0.2–v0.4**：规划已建档，未编码（2A `phase2a-package-split`；2B `phase2b-durable-runtime`；2C `phase2c-ai-providers`；2D `phase2d-schema-mcp-telemetry`）。
+- **二期 v0.2–v0.4**：2A 拆包已实现（四包 + 边界检查 + 行为快照，`change: phase2a-package-split`；注册待提交）；2B `phase2b-durable-runtime`、2C `phase2c-ai-providers`、2D `phase2d-schema-mcp-telemetry` 规划已建档。
 - **三期 v0.5–v1.0**：未开始（3A–3E）。
 - **改进记录门禁**：一期 M8 `--phase 1 --strict`；二期各子阶段收口 `--phase 2 --strict`；三期 v1.0 `--all --strict`。
 

@@ -9,29 +9,45 @@ upstream revision is verified.
 
 | PiKit | Upstream source | Upstream packages | Verified |
 |---|---|---|---|
-| 0.1.x | `earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a` | `pi-ai`, `pi-agent-core`, `pi-coding-agent` (reported 1.5.0) | 2026-11-08 |
+| 0.2.x (2A split) | `earendil-works/pi` @ `06aa6563e4d51d6df5de6c9664c3a868f3f5bb2a` | `pi-ai`, `pi-agent-core`, `pi-coding-agent` (reported 1.5.0) | 2026-11-12 |
 
 The baseline is an exact commit, not a floating npm range. Upstream package
 versions can differ from the nearest release tag because the snapshot may be
 ahead of the tag; the commit is authoritative for reproduction.
 
+## Package layout
+
+Upstream ships one npm package per layer; PiKit mirrors that mapping:
+
+| PiKit package | Upstream package | Notes |
+|---|---|---|
+| `PiAI` | `@earendil-works/pi-ai` | `HTTP`/`JSON` + stdlib only |
+| `PiAgentCore` | `@earendil-works/pi-agent-core` | depends on `PiAI` |
+| `PiCodingAgent` | `@earendil-works/pi-coding-agent` (library part) | tools, session, compaction, runtime |
+| `PiKit` | `@earendil-works/pi-coding-agent` (CLI/aggregate part) | `print`/`json`/`rpc`/`repl`, config, log sink |
+
+Upstream exports CLI parsing from the `pi-coding-agent` package root
+(`packages/coding-agent/src/index.ts:3`); PiKit deliberately keeps the library
+package free of CLI symbols and puts them in `PiKit` (D6).
+
 ## Compatibility matrix
 
 | Area | Status | Evidence |
 |---|---|---|
-| AI content/message types, JSON codec, `extra` preservation | ported | `test/ai/json_codec.jl` |
-| SSE parsing, event stream, abort polling | ported | `test/ai/sse.jl`, `test/ai/event_stream.jl` |
-| JSON Schema subset (`validate_arguments`) | ported | `test/ai/schema.jl` |
-| Model catalog, credentials, retry/overflow classification | ported | `test/ai/models.jl`, `test/ai/credentials.jl`, `test/ai/retry.jl` |
-| `openai-completions` provider | ported (HTTP SSE) | `test/ai/openai.jl` |
-| `anthropic-messages` provider | ported (HTTP SSE) | `test/ai/anthropic.jl` |
-| `faux` provider | ported | `test/ai/faux.jl` |
-| Agent loop, hooks, parallel tools, queues, abort, listeners | ported | `test/agent_core/*` |
-| `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`; `find` fd_jll pending) | `test/coding/*` |
-| Session v3 read/write/fork, unknown entries, `context_edit: null` | ported | `test/coding/session.jl` |
-| Compaction and overflow recovery | ported subset | `test/coding/compaction.jl` |
+| AI content/message types, JSON codec, `extra` preservation | ported | `PiAI/test/ai/json_codec.jl` |
+| SSE parsing, event stream, abort polling | ported | `PiAI/test/ai/sse.jl`, `PiAI/test/ai/event_stream.jl` |
+| JSON Schema subset (`validate_arguments`) | ported | `PiAI/test/ai/schema.jl` |
+| Model catalog, credentials, retry/overflow classification | ported | `PiAI/test/ai/models.jl`, `PiAI/test/ai/credentials.jl`, `PiAI/test/ai/retry.jl` |
+| `openai-completions` provider | ported (HTTP SSE) | `PiAI/test/ai/openai.jl` |
+| `anthropic-messages` provider | ported (HTTP SSE) | `PiAI/test/ai/anthropic.jl` |
+| `faux` provider | ported | `PiAI/test/ai/faux.jl` |
+| Agent loop, hooks, parallel tools, queues, abort, listeners | ported | `PiAgentCore/test/agent_core/*` |
+| `read/bash/powershell/edit/write/grep/find/ls` | ported (grep via `ripgrep_jll`; `find` fd_jll pending) | `PiCodingAgent/test/coding/*` |
+| Session v3 read/write/fork, unknown entries, `context_edit: null` | ported | `PiCodingAgent/test/coding/session.jl` |
+| Compaction and overflow recovery | ported subset | `PiCodingAgent/test/coding/compaction.jl` |
 | print/JSON/RPC/REPL modes | ported | `test/coding/json_rpc.jl`, `test/coding/json_mode.jl` |
 | File-first logging with per-file tags | ported | `test/logging.jl`, `test/logging_audit.jl` |
+| Package boundaries and snapshot equality | ported | `scripts/check-package-boundaries.jl`, `scripts/snapshot-regression.jl` |
 
 ## Known deviations
 
