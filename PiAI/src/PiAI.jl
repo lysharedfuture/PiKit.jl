@@ -1,4 +1,4 @@
-module AI
+module PiAI
 
 using Logging
 using Dates
@@ -42,7 +42,8 @@ export AbstractContent, TextContent, ImageContent, ThinkingContent, ToolCall,
        faux_text, faux_thinking, faux_tool_call, faux_assistant_message,
        set_responses!, append_responses!, reset_faux!, faux_call_count,
        faux_last_context, faux_last_model, load_faux_responses,
-       register_faux_provider!, EMPTY_USAGE, THINKING_LEVELS, STOP_REASONS, time_millis
+       register_faux_provider!, EMPTY_USAGE, THINKING_LEVELS, STOP_REASONS, time_millis,
+       plain, sleep_abortable
 
 function __init__()
     register_provider!("openai-completions", stream_openai)
@@ -52,4 +53,4 @@ function __init__()
     return nothing
 end
 
-end # module AI
+end # module PiAI
