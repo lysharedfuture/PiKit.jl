@@ -28,7 +28,7 @@ end
     sm = CA.create_session(td; dir=td, in_memory=true)
     s = CA.create_agent_session(cwd=td, model=model, session_manager=sm, settings=settings,
                                 tools_names=String[])
-    text = capture_output(() -> CA.run_json_mode(s, "hi"))
+    text = capture_output(() -> PiKit.run_json_mode(s, "hi"))
     lines = [line for line in split(text, '\n') if !isempty(line)]
     @test !isempty(lines)
     first = AI.json_parse(lines[1])
@@ -50,7 +50,7 @@ end
     sm2 = CA.create_session(td; dir=td, in_memory=true)
     s2 = CA.create_agent_session(cwd=td, model=model, session_manager=sm2, settings=settings,
                                  tools_names=String[])
-    rpc_text = capture_output(() -> CA.run_rpc_mode(s2);
+    rpc_text = capture_output(() -> PiKit.run_rpc_mode(s2);
                               input="{\"id\":\"1\",\"type\":\"get_state\"}\n")
     resp = AI.json_parse(strip(rpc_text))
     @test resp["type"] == "response"
@@ -63,7 +63,7 @@ end
     sm3 = CA.create_session(td; dir=td, in_memory=true)
     s3 = CA.create_agent_session(cwd=td, model=model, session_manager=sm3, settings=settings,
                                  tools_names=String[])
-    rpc_text2 = capture_output(() -> CA.run_rpc_mode(s3);
+    rpc_text2 = capture_output(() -> PiKit.run_rpc_mode(s3);
                                input="{\"id\":\"2\",\"type\":\"nope\"}\n")
     resp2 = AI.json_parse(strip(rpc_text2))
     @test resp2["success"] === false

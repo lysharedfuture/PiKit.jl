@@ -39,7 +39,7 @@
         (type="summarization_retry_end", success=false, attempt=1),
         (type="agent_settled", aborted=false),
     ]
-    produced = Set{String}(CA.json_mode_event(ev)["type"] for ev in events)
+    produced = Set{String}(PiKit.json_mode_event(ev)["type"] for ev in events)
     missing = setdiff(Set(documented), produced)
     @test isempty(missing)
 end
