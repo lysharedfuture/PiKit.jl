@@ -20,7 +20,7 @@ jobs:
           version: '1.13'
       - uses: julia-actions/cache@v2
       - name: Instantiate docs environment
-        run: julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: Build docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
