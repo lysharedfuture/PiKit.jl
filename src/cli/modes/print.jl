@@ -19,6 +19,12 @@ function _assistant_exit_code(msg::Union{Nothing,PiAISDK.AssistantMessage})
     return 0
 end
 
+"""
+    run_print_mode(s::AgentSession, prompt_text::String; images=ImageContent[])
+
+Send one prompt, print the final assistant text to stdout, and return the
+process exit code (`0` success, `1` for error/aborted/truncated responses).
+"""
 function run_print_mode(s::AgentSession, prompt_text::String; images=PiAISDK.ImageContent[])
     isempty(prompt_text) && isempty(images) && return 0
     prompt!(s, prompt_text; images=images)

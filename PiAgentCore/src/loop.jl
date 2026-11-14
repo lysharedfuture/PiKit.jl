@@ -278,6 +278,29 @@ function _apply_prepare_next_turn(config, message, tool_results)
     return PiAISDK.AbstractMessage[]
 end
 
+"""
+    run_loop(context, new_messages, config, signal, emit, stream_fn=config.stream_fn)
+
+Run the agent loop over `context`.
+
+`new_messages` are appended to the conversation and emitted before the first
+turn. Each turn streams one assistant message, executes its tool calls when
+present, and emits turn, message and tool events through `emit`. The loop stops
+when the assistant produces no tool calls, a tool result requests termination,
+the assistant reports `"error"`/`"aborted"`, or `config.finish_turn` returns
+`:end`. Steering and follow-up messages from `config` are drained between
+turns.
+
+Returns the messages produced by the run.
+
+# Arguments
+- `context::AgentContext`: conversation state; mutated in place.
+- `new_messages`: messages to append before the loop starts.
+- `config::AgentLoopConfig`: model, hooks and tool execution mode.
+- `signal`: abort token checked by providers and tools (may be `nothing`).
+- `emit`: callback invoked with every [`AbstractAgentEvent`](@ref).
+- `stream_fn`: streaming function; assigned to `config.stream_fn`.
+"""
 function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
                   signal, emit, stream_fn=config.stream_fn)
     _validate_tool_execution(config)
@@ -364,12 +387,38 @@ function run_loop(context::AgentContext, new_messages, config::AgentLoopConfig,
     end
 end
 
+"""
+    run_agent_loop(prompts, context, config, signal, emit, stream_fn=config.stream_fn)
+
+Run one agent loop seeded with `prompts` and return the messages produced by
+the run. Equivalent to [`run_loop`](@ref) with `prompts` as the new messages.
+
+# Example
+```julia
+using PiAISDK, PiAgentCore
+set_responses!([faux_text("Hello")])
+produced = run_agent_loop(AbstractMessage[], AgentContext(AbstractMessage[]), AgentLoopConfig(model=find_model("faux/faux-1")), nothing, _ -> nothing)
+```
+"""
 run_agent_loop(prompts, context::AgentContext, config::AgentLoopConfig, signal, emit, stream_fn=config.stream_fn) =
     run_loop(context, PiAISDK.AbstractMessage[prompts...], config, signal, emit, stream_fn)
 
+"""
+    run_agent_loop_continue(context, config, signal, emit, stream_fn=config.stream_fn)
+
+Resume the agent loop on an existing context without appending new messages.
+Equivalent to [`run_loop`](@ref) with an empty `new_messages`.
+"""
 run_agent_loop_continue(context::AgentContext, config::AgentLoopConfig, signal, emit, stream_fn=config.stream_fn) =
     run_loop(context, PiAISDK.AbstractMessage[], config, signal, emit, stream_fn)
 
+"""
+    declare_tool_changes(context::AgentContext, pending)
+
+Upstream compatibility stub for declaring pending tool changes to the loop.
+
+Returns `context` unchanged; `pending` is not applied.
+"""
 function declare_tool_changes(context::AgentContext, pending)
     return context
 end

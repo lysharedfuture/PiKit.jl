@@ -9,6 +9,12 @@ const POWERSHELL_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    PowerShellOperations
+
+Alias for [`BashOperations`](@ref); the PowerShell tool shares the bash
+execution interface.
+"""
 const PowerShellOperations = BashOperations
 
 function powershell_exec(command::String, cwd::String; on_data=nothing,
@@ -60,6 +66,19 @@ function powershell_exec(command::String, cwd::String; on_data=nothing,
             timed_out=timed_out, aborted=aborted, full_output_path=outfile)
 end
 
+"""
+    powershell_tool(cwd::String; env=nothing)
+
+Create the `powershell` tool. The tool is Windows-only; elsewhere it returns
+an error result. Output is truncated like [`bash_tool`](@ref).
+
+# Arguments
+- `cwd::String`: working directory.
+- `env`: extra environment variables.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function powershell_tool(cwd::String; env::Union{Nothing,Dict{String,String}}=nothing)
     execute = function (id, args, signal, on_update)
         Sys.iswindows() || return PiAgentCore.ToolResult(

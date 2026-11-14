@@ -15,6 +15,16 @@ const GREP_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    GrepOperations
+
+Hooks used by [`grep_tool`](@ref).
+
+# Fields
+- `is_directory::Function`: `path -> Bool`, whether to search a directory tree.
+- `run::Function`: `(rg_executable, args) -> (stdout, stderr, exit_code)`,
+  runs ripgrep.
+"""
 struct GrepOperations
     is_directory::Function
     run::Function
@@ -33,11 +43,30 @@ function default_grep_run(rg_cmd, args)
     return run_capture(cmd)
 end
 
+"""
+    DEFAULT_GREP_OPERATIONS
+
+[`GrepOperations`](@ref) backed by `ripgrep_jll` and the local filesystem.
+"""
 const DEFAULT_GREP_OPERATIONS = GrepOperations(
     path -> isdir(path),
     default_grep_run,
 )
 
+"""
+    grep_tool(cwd::String; operations::GrepOperations=DEFAULT_GREP_OPERATIONS)
+
+Create the `grep` tool. It searches with ripgrep's JSON output, respects
+`.gitignore`, truncates long lines, and caps output at 100 matches or
+[`DEFAULT_MAX_BYTES`](@ref) bytes by default.
+
+# Arguments
+- `cwd::String`: working directory.
+- `operations::GrepOperations`: search hooks.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function grep_tool(cwd::String; operations::GrepOperations=DEFAULT_GREP_OPERATIONS)
     execute = function (id, args, signal, on_update)
         pattern = String(args["pattern"])

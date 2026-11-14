@@ -60,6 +60,31 @@ function default_preamble()
     return "You are pikit, a coding agent working with the user in their repository. Use the available tools to inspect and modify files. Be careful, verify your work, and keep the user informed with concise progress updates."
 end
 
+"""
+    build_system_sections(cwd::String; tools=PiAgentCore.Tool[], model=nothing,
+                          append_system_prompt=nothing, system_prompt=nothing,
+                          no_context_files::Bool=false, trusted::Bool=false,
+                          agent_dir=default_agent_dir())
+
+Assemble the ordered system-prompt sections for an agent session: preamble,
+tool list, rules, documentation pointer, optional addendum, discovered project
+context files (`AGENTS.md`, `CLAUDE.md`, ...), and the working directory. All
+sections except the preamble are wrapped in matching XML-like tags.
+
+# Arguments
+- `cwd::String`: working directory used for context discovery and the `cwd` section.
+- `tools`: tools to advertise and derive guidelines from.
+- `model`: accepted for API compatibility; currently unused.
+- `append_system_prompt`: extra text appended as an `addendum` section.
+- `system_prompt`: replaces the default preamble when given.
+- `no_context_files::Bool`: skip project instruction discovery.
+- `trusted::Bool`: allow a project-level `.pikit/SYSTEM.md` override.
+- `agent_dir`: directory containing `SYSTEM.md` and `APPEND_SYSTEM.md`.
+
+# Returns
+`Vector{Pair{String,Union{String,Nothing}}}` mapping section names to rendered
+text.
+"""
 function build_system_sections(cwd::String; tools=PiAgentCore.Tool[], model=nothing,
                                append_system_prompt=nothing, system_prompt=nothing,
                                no_context_files::Bool=false, trusted::Bool=false,
@@ -123,6 +148,19 @@ function build_system_sections(cwd::String; tools=PiAgentCore.Tool[], model=noth
     return wrapped
 end
 
+"""
+    build_system_message(cwd::String; kwargs...)
+
+Build a `PiAISDK.SystemMessage` from [`build_system_sections`](@ref), dropping
+the preamble section (the preamble is supplied separately by providers).
+
+# Arguments
+- `cwd::String`: working directory.
+- `kwargs...`: forwarded to [`build_system_sections`](@ref).
+
+# Returns
+A `PiAISDK.SystemMessage` whose `sections` hold the non-preamble sections.
+"""
 function build_system_message(cwd::String; kwargs...)
     sections = build_system_sections(cwd; kwargs...)
     cleaned = Pair{String,Union{String,Nothing}}[p for p in sections if p.first != "preamble"]

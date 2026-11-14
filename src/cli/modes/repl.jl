@@ -59,6 +59,13 @@ function _repl_resume!(s::AgentSession)
     println("Resumed $(basename(sessions[idx]))")
 end
 
+"""
+    run_repl_mode(s::AgentSession; initial_prompt="", images=ImageContent[])
+
+Line-oriented REPL. Streams assistant output, accepts slash commands
+(`/help`, `/model`, `/session`, …), and exits on EOF or Ctrl-D. An
+`initial_prompt` is sent before the first prompt is read.
+"""
 function run_repl_mode(s::AgentSession; initial_prompt::String="", images=PiAISDK.ImageContent[])
     unsubscribe = subscribe(s, _repl_print_stream)
     try

@@ -84,6 +84,18 @@ function _resolve_thinking(opts::CLIOptions, model, settings::Dict{String,Any}; 
     return String(level)
 end
 
+"""
+    build_runtime(opts::CLIOptions) -> AgentSession
+
+Resolve the session, model, thinking level and tool set from `opts` and the
+loaded settings, then create the [`AgentSession`](@ref) used by the selected
+mode. `--fork` replaces the session with a fork at the given entry. Honours
+`PIKIT_FAUX_RESPONSES` by registering scripted faux responses before model
+resolution.
+
+Throws [`CLIError`](@ref) when no model is selected or the requested model is
+not in the catalog.
+"""
 function build_runtime(opts::CLIOptions)
     cwd = pwd()
     trusted = opts.approve === true

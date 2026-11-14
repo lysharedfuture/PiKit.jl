@@ -1,5 +1,18 @@
 const LOG_TAG = "agent_core_agent"
 
+"""
+    PendingQueue(; mode=:one_at_a_time)
+
+FIFO queue of messages used for steering and follow-up delivery.
+
+`mode` is `:one_at_a_time` (drain one message per call) or `:all` (drain and
+clear the whole queue). Prefer [`steer!`](@ref PiAgentCore.steer!) and [`follow_up!`](@ref PiAgentCore.follow_up!) on an
+[`Agent`](@ref) over enqueuing directly.
+
+# Fields
+- `messages::Vector{PiAISDK.AbstractMessage}`: queued messages.
+- `mode::Symbol`: dequeue policy.
+"""
 mutable struct PendingQueue
     messages::Vector{PiAISDK.AbstractMessage}
     mode::Symbol
@@ -26,6 +39,21 @@ function clear!(q::PendingQueue)
     return nothing
 end
 
+"""
+    AgentState
+
+Observable state of an [`Agent`](@ref).
+
+# Fields
+- `messages::Vector{PiAISDK.AbstractMessage}`: conversation history, mutated by runs.
+- `tools::Vector{Tool}`: tools available to the agent.
+- `model::PiAISDK.Model`: model used for requests.
+- `thinking_level::String`: reasoning level passed to the provider.
+- `is_streaming::Bool`: whether a run is in progress.
+- `streaming_message::Union{Nothing,PiAISDK.AbstractMessage}`: current partial assistant message.
+- `pending_tool_calls::Set{String}`: tool call ids currently executing.
+- `error_message::Union{Nothing,String}`: last error reported by the run.
+"""
 mutable struct AgentState
     messages::Vector{PiAISDK.AbstractMessage}
     tools::Vector{Tool}
@@ -37,6 +65,25 @@ mutable struct AgentState
     error_message::Union{Nothing,String}
 end
 
+"""
+    Agent(; model=PiAISDK.Model("unconfigured"), tools=Tool[], messages=PiAISDK.AbstractMessage[],
+          system_prompt=nothing, sections=nothing, thinking_level="off",
+          tool_execution=:parallel, session_id=nothing, convert_to_llm=default_convert_to_llm,
+          transform_context=nothing, get_api_key=nothing, finish_turn=nothing,
+          prepare_request=nothing, prepare_next_turn=nothing, before_tool_call=nothing,
+          after_tool_call=nothing)
+
+Stateful agent that runs [`run_agent_loop`](@ref) in a background task, keeps
+its own message history, tool list and listener set, and exposes steering,
+follow-up and abort controls.
+
+When the first message is not a `PiAISDK.SystemMessage`, a system message is
+created from `system_prompt`, `sections` and the tool declarations. Hook
+keywords are forwarded to [`AgentLoopConfig`](@ref) on each run.
+
+Use [`prompt!`](@ref PiAgentCore.prompt!) to start a run, [`subscribe`](@ref PiAgentCore.subscribe) to observe events and
+[`wait_idle`](@ref) to block until it finishes.
+"""
 mutable struct Agent
     state::AgentState
     listeners::Vector{Function}
@@ -82,6 +129,12 @@ function Agent(; model=PiAISDK.Model("unconfigured"), tools=Tool[], messages=PiA
                  before_tool_call, after_tool_call, ReentrantLock())
 end
 
+"""
+    system_prompt(agent::Agent) -> String
+
+Concatenate the text of every `PiAISDK.SystemMessage` in the agent history,
+including its `sections` values, separated by blank lines.
+"""
 function system_prompt(agent::Agent)
     parts = String[]
     for m in agent.state.messages
@@ -123,6 +176,12 @@ function _emit(agent::Agent, ev)
     return nothing
 end
 
+"""
+    process_event!(agent::Agent, ev::AbstractAgentEvent)
+
+Apply one agent event to `agent.state`: streaming flags, the current partial
+message, pending tool call ids and the last error message.
+"""
 function process_event!(agent::Agent, ev)
     state = agent.state
     if ev isa AgentStartEvent
@@ -151,6 +210,17 @@ function process_event!(agent::Agent, ev)
     return nothing
 end
 
+"""
+    subscribe(agent::Agent, f::Function) -> Function
+
+Register `f` to receive every [`AbstractAgentEvent`](@ref) emitted by `agent`.
+
+Listeners run while the agent lock is held; a listener returning a `Task` is
+awaited, and listener errors are logged and stored in
+`agent.state.error_message`.
+
+Returns a zero-argument function that removes the listener.
+"""
 function subscribe(agent::Agent, f::Function)
     lock(agent.lock) do
         push!(agent.listeners, f)
@@ -232,6 +302,17 @@ function _ensure_idle(agent::Agent)
     end
 end
 
+"""
+    prompt!(agent::Agent, text::AbstractString; images=PiAISDK.ImageContent[])
+    prompt!(agent::Agent, msg::PiAISDK.AbstractMessage)
+    prompt!(agent::Agent, msgs::AbstractVector{<:PiAISDK.AbstractMessage})
+
+Start an agent run seeded with the given content and block until it finishes.
+Events are delivered to subscribers, and prompt and reply messages are appended
+to `agent.state.messages`.
+
+Throws `ErrorException("Agent is already processing.")` when a run is active.
+"""
 function prompt!(agent::Agent, text::AbstractString; images=PiAISDK.ImageContent[])
     _ensure_idle(agent)
     content = if isempty(images)
@@ -256,6 +337,16 @@ function prompt!(agent::Agent, msgs::AbstractVector{<:PiAISDK.AbstractMessage})
     return nothing
 end
 
+"""
+    continue!(agent::Agent)
+
+Continue a finished conversation without a new prompt.
+
+Requires at least one non-system message. When the last message is an assistant
+message, queued steering or follow-up messages are used as the new input;
+otherwise the loop resumes directly. Throws `ErrorException` when there is
+nothing to continue from.
+"""
 function continue!(agent::Agent)
     _ensure_idle(agent)
     msgs = agent.state.messages
@@ -274,6 +365,12 @@ function continue!(agent::Agent)
     return nothing
 end
 
+"""
+    steer!(agent::Agent, text::AbstractString)
+    steer!(agent::Agent, msg::PiAISDK.AbstractMessage)
+
+Queue a steering message that is delivered between turns of a running agent.
+"""
 function steer!(agent::Agent, text::AbstractString)
     enqueue!(agent.steering, PiAISDK.UserMessage(String(text)))
     return nothing
@@ -282,6 +379,13 @@ function steer!(agent::Agent, msg::PiAISDK.AbstractMessage)
     enqueue!(agent.steering, msg)
     return nothing
 end
+"""
+    follow_up!(agent::Agent, text::AbstractString)
+    follow_up!(agent::Agent, msg::PiAISDK.AbstractMessage)
+
+Queue a follow-up message that is delivered after a turn ends without
+requesting more tool calls.
+"""
 function follow_up!(agent::Agent, text::AbstractString)
     enqueue!(agent.follow_up, PiAISDK.UserMessage(String(text)))
     return nothing
@@ -291,27 +395,59 @@ function follow_up!(agent::Agent, msg::PiAISDK.AbstractMessage)
     return nothing
 end
 
+"""
+    clear_queues!(agent::Agent)
+
+Discard all queued steering and follow-up messages.
+"""
 function clear_queues!(agent::Agent)
     clear!(agent.steering)
     clear!(agent.follow_up)
     return nothing
 end
 
+"""
+    peek_queued(agent::Agent) -> NamedTuple
+
+Return copies of the queued messages as `(steering=..., follow_up=...)` without
+dequeuing them.
+"""
 function peek_queued(agent::Agent)
     return (steering=copy(agent.steering.messages), follow_up=copy(agent.follow_up.messages))
 end
 
+"""
+    abort!(agent::Agent)
+
+Signal the abort token of the active run, if any. The running loop stops after
+the current provider or tool step.
+"""
 function abort!(agent::Agent)
     agent.signal === nothing || PiAISDK.abort!(agent.signal)
     return nothing
 end
 
+"""
+    wait_idle(agent::Agent)
+
+Block until the agent's active run task finishes. Returns immediately when no
+run is active.
+"""
 function wait_idle(agent::Agent)
     t = agent.active_task
     t === nothing || wait(t)
     return nothing
 end
 
+"""
+    reset!(agent::Agent)
+
+Reset the agent to its system-message baseline: drop all non-system messages,
+clear errors, streaming state and pending tool calls, and empty the steering and
+follow-up queues.
+
+Throws `ErrorException("Agent is already processing.")` while a run is active.
+"""
 function reset!(agent::Agent)
     _ensure_idle(agent)
     baseline = PiAISDK.AbstractMessage[]

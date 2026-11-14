@@ -1,5 +1,12 @@
 const LOG_TAG = "ai_json"
 
+"""
+    plain(x)
+
+Recursively convert `x` to plain JSON-compatible values: dictionaries become
+`Dict{String,Any}`, vectors become `Vector{Any}`, and strings are copied.
+Other values are returned unchanged.
+"""
 plain(::Nothing) = nothing
 plain(x::Number) = x
 plain(x::Bool) = x
@@ -27,6 +34,12 @@ function sections_plain(v)
     return nothing
 end
 
+"""
+    json_parse(s::AbstractString) -> Any
+
+Parse JSON text and convert the result with `plain`, including `sections`
+objects preserved as ordered pairs.
+"""
 json_parse(s::AbstractString) = ordered_plain(JSON.parse(s))
 
 function _json_write(io::IO, x)
@@ -64,12 +77,25 @@ function _json_write(io::IO, x)
     end
 end
 
+"""
+    json_write(x) -> String
+
+Serialize `x` to compact JSON text. Dictionaries, pair vectors, and arrays are
+walked manually so key order is preserved; other values are encoded by JSON.jl.
+"""
 function json_write(x)
     io = IOBuffer()
     _json_write(io, x)
     return String(take!(io))
 end
 
+"""
+    to_json(x)
+
+Convert a content block or message to its upstream JSON-compatible `Dict`
+form. Content blocks carry a `"type"` discriminator; messages delegate to
+`message_to_json`.
+"""
 function to_json(c::TextContent)
     d = Dict{String,Any}("type" => "text", "text" => c.text)
     c.text_signature === nothing || (d["textSignature"] = c.text_signature)
@@ -93,6 +119,15 @@ function to_json(c::ToolCall)
     return d
 end
 
+"""
+    content_from_json(d) -> AbstractContent
+
+Build a content block from a JSON object, dispatching on its `"type"` field:
+`"text"`, `"image"`, `"thinking"`, or `"toolCall"`.
+
+# Throws
+- `ArgumentError`: `d` has a missing or unknown `"type"`.
+"""
 function content_from_json(d)
     t = get(d, "type", nothing)
     if t == "text"
@@ -115,6 +150,12 @@ function content_from_json(d)
     throw(ArgumentError("unknown content type: $(t)"))
 end
 
+"""
+    usage_to_json(u::Usage) -> Dict{String,Any}
+
+Serialize `u` to the upstream usage object, including cost and the optional
+`cacheWrite1h` and `reasoning` counters.
+"""
 function usage_to_json(u::Usage)
     d = Dict{String,Any}(
         "input" => u.input,
@@ -153,6 +194,12 @@ function cost_from_json(d)
     )
 end
 
+"""
+    usage_from_json(d) -> Usage
+
+Build a `Usage` from a JSON usage object; missing counters default to zero and
+`nothing` yields `empty_usage()`.
+"""
 function usage_from_json(d)
     d === nothing && return empty_usage()
     input = Int(get(d, "input", 0))
@@ -192,6 +239,15 @@ function content_field_from_json(v)
     return AbstractContent[content_from_json(x) for x in v]
 end
 
+"""
+    message_to_json(m::AbstractMessage) -> Dict{String,Any}
+
+Serialize a message to its upstream JSON object. `m.extra` keys are merged in
+first, so unknown fields survive a round trip.
+
+# Throws
+- `ArgumentError`: `m` is not a concrete message type.
+"""
 function message_to_json(m::SystemMessage)
     d = Dict{String,Any}(m.extra)
     d["role"] = "system"
@@ -246,6 +302,16 @@ end
 
 message_to_json(::AbstractMessage) = throw(ArgumentError("unknown message type"))
 
+"""
+    message_from_json(d) -> AbstractMessage
+
+Build a message from a JSON object, dispatching on `"role"`: `"system"`,
+`"user"`, `"assistant"`, or `"toolResult"`. Unknown keys are preserved in the
+message's `extra`.
+
+# Throws
+- `ArgumentError`: `d` lacks `"role"` or has an unknown role.
+"""
 function message_from_json(d)
     role = get(d, "role", nothing)
     role === nothing && throw(ArgumentError("message is missing role"))

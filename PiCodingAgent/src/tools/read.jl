@@ -42,15 +42,47 @@ function _detect_image_mime(path::String)
     end
 end
 
+"""
+    ReadOperations
+
+Filesystem hooks used by [`read_tool`](@ref).
+
+# Fields
+- `access::Function`: `path -> Bool`, checks file existence.
+- `read_file::Function`: `path -> Vector{UInt8}`, reads raw bytes.
+- `detect_image_mime::Function`: `path -> Union{Nothing,String}`, returns an
+  image MIME type when the file is a supported image.
+"""
 struct ReadOperations
     access::Function
     read_file::Function
     detect_image_mime::Function
 end
 
+"""
+    DEFAULT_READ_OPERATIONS
+
+[`ReadOperations`](@ref) backed by the local filesystem.
+"""
 const DEFAULT_READ_OPERATIONS = ReadOperations(path -> isfile(path), path -> read(path),
                                                path -> _detect_image_mime(path))
 
+"""
+    read_tool(cwd::String; supports_images::Bool=true,
+              operations::ReadOperations=DEFAULT_READ_OPERATIONS)
+
+Create the `read` tool. It returns text file contents with truncation and
+`offset`/`limit` paging, and attaches supported images when the model accepts
+image input.
+
+# Arguments
+- `cwd::String`: working directory used to resolve relative paths.
+- `supports_images::Bool`: whether image content may be attached.
+- `operations::ReadOperations`: filesystem hooks.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function read_tool(cwd::String; supports_images::Bool=true,
                    operations::ReadOperations=DEFAULT_READ_OPERATIONS)
     execute = function (id, args, signal, on_update)

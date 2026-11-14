@@ -41,6 +41,13 @@ function AssistantMessageEventStream(producer::Function)
     return s
 end
 
+"""
+    push_event!(s::AssistantMessageEventStream, ev)
+
+Enqueue `ev` on `s`. `DoneEvent` and `ErrorEvent` also record the final
+assistant message used by `result`. Events pushed after the stream closed are
+dropped with a debug log.
+"""
 function push_event!(s::AssistantMessageEventStream, ev)
     if ev isa DoneEvent
         s.final[] = ev.message
@@ -55,8 +62,19 @@ function push_event!(s::AssistantMessageEventStream, ev)
     return nothing
 end
 
+"""
+    finish!(s::AssistantMessageEventStream, msg::AssistantMessage)
+
+Record `msg` as the final message of `s` without emitting an event.
+"""
 finish!(s::AssistantMessageEventStream, msg::AssistantMessage) = (s.final[] = msg)
 
+"""
+    result(s::AssistantMessageEventStream) -> AssistantMessage
+
+Wait for the producer task and return the final assistant message. If the
+provider never produced one, returns an error message.
+"""
 function result(s::AssistantMessageEventStream)
     s.task === nothing || wait(s.task)
     if s.final[] === nothing

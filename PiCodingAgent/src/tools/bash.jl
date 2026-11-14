@@ -14,6 +14,17 @@ const BASH_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    BashOperations
+
+Execution backend for [`bash_tool`](@ref).
+
+# Fields
+- `exec::Function`: called as
+  `exec(command, cwd; on_data, signal, timeout, env, shell_path)` and returns a
+  `NamedTuple` with `exit_code`, `output`, `timed_out`, `aborted`, and
+  `full_output_path`.
+"""
 struct BashOperations
     exec::Function
 end
@@ -36,6 +47,26 @@ function _read_if_exists(path)
     end
 end
 
+"""
+    default_bash_exec(command::String, cwd::String; on_data=nothing, signal=nothing,
+                      timeout=nothing, env=nothing, shell_path=nothing)
+
+Run `command` through the platform shell, streaming output snapshots to
+`on_data` at most every ~200 ms and honoring abort signals and timeouts.
+
+# Arguments
+- `command::String`: shell command to run.
+- `cwd::String`: working directory.
+- `on_data`: callback receiving the current sanitized output snapshot.
+- `signal`: `PiAISDK.AbortToken` used to kill the process tree.
+- `timeout`: timeout in seconds, or `nothing` for no timeout.
+- `env`: environment variables to apply.
+- `shell_path`: explicit shell executable.
+
+# Returns
+`NamedTuple` with `exit_code`, `output`, `timed_out`, `aborted`, and
+`full_output_path`.
+"""
 function default_bash_exec(command::String, cwd::String; on_data=nothing,
                            signal::Union{Nothing,PiAISDK.AbortToken}=nothing,
                            timeout::Union{Nothing,Float64}=nothing,
@@ -104,6 +135,11 @@ function default_bash_exec(command::String, cwd::String; on_data=nothing,
             full_output_path=outfile)
 end
 
+"""
+    DEFAULT_BASH_OPERATIONS
+
+[`BashOperations`](@ref) backed by [`default_bash_exec`](@ref).
+"""
 const DEFAULT_BASH_OPERATIONS = BashOperations(default_bash_exec)
 
 function format_bash_output(output::String, exit_code, trunc::TruncationResult, full_path,
@@ -143,6 +179,23 @@ function format_bash_output(output::String, exit_code, trunc::TruncationResult, 
     return (text=text, details=details, is_error=is_error)
 end
 
+"""
+    bash_tool(cwd::String; operations::BashOperations=DEFAULT_BASH_OPERATIONS,
+              env=nothing, shell_path=nothing)
+
+Create the `bash` tool. Output is truncated to the last [`DEFAULT_MAX_LINES`](@ref)
+lines or [`DEFAULT_MAX_BYTES`](@ref) bytes; when truncated, the full output is
+saved to a temporary file whose path is reported.
+
+# Arguments
+- `cwd::String`: working directory.
+- `operations::BashOperations`: execution backend.
+- `env`: extra environment variables for the shell.
+- `shell_path`: explicit shell executable.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function bash_tool(cwd::String; operations::BashOperations=DEFAULT_BASH_OPERATIONS,
                    env::Union{Nothing,Dict{String,String}}=nothing,
                    shell_path::Union{Nothing,String}=nothing)

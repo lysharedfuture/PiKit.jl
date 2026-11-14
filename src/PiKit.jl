@@ -1,3 +1,13 @@
+"""
+    PiKit
+
+CLI and aggregate layer over `PiAISDK`, `PiAgentCore` and `PiCodingAgent`.
+
+Keeps the v0.1 module paths as `const` aliases (`PiKit.AI === PiAISDK`,
+`PiKit.AgentCore === PiAgentCore`, `PiKit.CodingAgent === PiCodingAgent`),
+installs the file log sink in `__init__`, and provides the command-line entry
+points (`main`, `(@main)(args)`) together with the CLI helpers.
+"""
 module PiKit
 
 using Dates
@@ -33,7 +43,12 @@ function (@main)(args)
     return cli_main(args)
 end
 
-"""Programmatic entry point using the process arguments."""
+"""
+    main() -> Int
+
+Programmatic entry point using the process arguments. Equivalent to
+`julia -m PiKit ...`; returns the process exit code.
+"""
 main() = cli_main(ARGS)
 
 function __init__()

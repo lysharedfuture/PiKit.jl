@@ -11,6 +11,15 @@ const FIND_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    FindOperations
+
+Hooks used by [`find_tool`](@ref).
+
+# Fields
+- `exists::Function`: `path -> Bool`, checks that the search path exists.
+- `glob::Function`: `(pattern, path, limit) -> Vector{String}`, returns matches.
+"""
 struct FindOperations
     exists::Function
     glob::Function
@@ -47,6 +56,11 @@ function fd_glob(pattern::String, search_path::String, limit::Int)
     return String[strip(replace(line, '\r' => "")) for line in split(captured.stdout, '\n') if !isempty(strip(line))]
 end
 
+"""
+    DEFAULT_FIND_OPERATIONS
+
+[`FindOperations`](@ref) backed by `fd_jll` and the local filesystem.
+"""
 const DEFAULT_FIND_OPERATIONS = FindOperations(path -> ispath(path),
                                                (pattern, path, limit) -> fd_glob(pattern, path, limit))
 
@@ -57,6 +71,20 @@ function relativize_find_result(result_path::String, search_path::String)
     return had_trailing && !endswith(posix, "/") ? posix * "/" : posix
 end
 
+"""
+    find_tool(cwd::String; operations::FindOperations=DEFAULT_FIND_OPERATIONS)
+
+Create the `find` tool. It matches file paths with a glob pattern via `fd`,
+respects `.gitignore`, and truncates results at the requested limit or
+[`DEFAULT_MAX_BYTES`](@ref) bytes.
+
+# Arguments
+- `cwd::String`: working directory.
+- `operations::FindOperations`: search hooks.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function find_tool(cwd::String; operations::FindOperations=DEFAULT_FIND_OPERATIONS)
     execute = function (id, args, signal, on_update)
         pattern = String(args["pattern"])

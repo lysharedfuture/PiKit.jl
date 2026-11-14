@@ -30,6 +30,23 @@ function find_executable_on_path(executable::String)
     return path === nothing ? nothing : String(path)
 end
 
+"""
+    get_shell_config(custom_shell_path::Union{Nothing,String}=nothing)
+
+Locate the bash-compatible shell used by the `bash` tool and describe how to
+invoke it. Falls back to `sh` on POSIX systems when bash is unavailable.
+
+# Arguments
+- `custom_shell_path`: explicit shell path; must exist when given.
+
+# Returns
+A `ShellConfig` with `shell`, `args`, and `command_transport` (`:argv` or
+`:stdin`).
+
+# Throws
+`ErrorException` when a custom path does not exist or no shell is found on
+Windows.
+"""
 function get_shell_config(custom_shell_path::Union{Nothing,String}=nothing)
     if custom_shell_path !== nothing && !isempty(custom_shell_path)
         ispath(custom_shell_path) || throw(ErrorException("Custom shell path not found: $(custom_shell_path)"))
@@ -54,6 +71,18 @@ function get_shell_config(custom_shell_path::Union{Nothing,String}=nothing)
     return ShellConfig("sh", ["-c"], :argv)
 end
 
+"""
+    get_powershell_config()
+
+Locate `pwsh.exe` or `powershell.exe` for the `powershell` tool.
+
+# Returns
+A `ShellConfig` for PowerShell.
+
+# Throws
+`ErrorException` on non-Windows systems or when no PowerShell executable is
+found.
+"""
 function get_powershell_config()
     Sys.iswindows() || throw(ErrorException("The powershell tool is only available on Windows."))
     shell = find_executable_on_path("pwsh.exe")
@@ -74,6 +103,25 @@ function get_powershell_config()
     return ShellConfig(shell, copy(POWERSHELL_ARGS), :argv)
 end
 
+"""
+    get_shell_env(; model=nothing, session_id=nothing, session_file=nothing,
+                  provider=nothing, reasoning=nothing, agent_dir=default_agent_dir())
+
+Build the environment for tool subprocesses from the current process
+environment: prepend `agent_dir/bin` to `PATH`, clear stale `PI_*` variables,
+and set the requested session and model variables.
+
+# Arguments
+- `model`: value for `PI_MODEL`.
+- `session_id`: value for `PI_SESSION_ID`.
+- `session_file`: value for `PI_SESSION_FILE`.
+- `provider`: value for `PI_PROVIDER`.
+- `reasoning`: value for `PI_REASONING_LEVEL`.
+- `agent_dir`: directory whose `bin` subdirectory is added to `PATH`.
+
+# Returns
+`Dict{String,String}` environment mapping.
+"""
 function get_shell_env(; model=nothing, session_id=nothing, session_file=nothing,
                        provider=nothing, reasoning=nothing, agent_dir=default_agent_dir())
     env = Dict{String,String}(String(k) => String(v) for (k, v) in ENV)
@@ -103,6 +151,18 @@ function sanitize_binary_output(s::String)
                                             '\x1b', '\x1c', '\x1d', '\x1e', '\x1f', '\ufff9', '\ufffa', '\ufffb'))])
 end
 
+"""
+    kill_process_tree(pid::Integer)
+
+Terminate a process and its children. Uses `taskkill /F /T` on Windows and
+process-group signals on POSIX systems.
+
+# Arguments
+- `pid::Integer`: root process id.
+
+# Returns
+`nothing`.
+"""
 function kill_process_tree(pid::Integer)
     if Sys.iswindows()
         root = get(ENV, "SystemRoot", "C:\\Windows")

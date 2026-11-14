@@ -11,12 +11,16 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "CLI" => "cli.md",
+        "PiKit (CLI API)" => "pikit.md",
+        "PiAISDK" => "sdk.md",
+        "PiAgentCore" => "agent-core.md",
+        "PiCodingAgent" => "coding-agent.md",
         "JSON events" => "json.md",
         "Sessions" => "sessions.md",
         "Upstream compatibility" => "upstream-compat.md",
         "Julia improvements" => "julia-improvements.md",
     ],
-    checkdocs = :none,
+    checkdocs = :exports,
 )
 
 if get(ENV, "DOCUMENTER_KEY", "") != ""

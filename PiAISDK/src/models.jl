@@ -43,6 +43,12 @@ function _load_catalog(path)
     return models
 end
 
+"""
+    load_models() -> Vector{Model}
+
+Return the bundled model catalog from `src/models.json`, parsed once and
+cached; the returned vector is a copy.
+"""
 function load_models()
     _MODELS_CACHE[] !== nothing && return copy(_MODELS_CACHE[])
     path = joinpath(@__DIR__, "models.json")
@@ -51,6 +57,13 @@ function load_models()
     return copy(models)
 end
 
+"""
+    load_user_models(agent_dir=homedir()) -> Vector{Model}
+
+Load the user model catalog from the first existing `models.json` under
+`agent_dir`, its parent, or `~/.pikit`. Returns an empty vector when none
+exists.
+"""
 function load_user_models(agent_dir=homedir())
     candidates = [joinpath(agent_dir, "models.json"),
                   joinpath(dirname(agent_dir), "models.json"),
@@ -62,6 +75,13 @@ function load_user_models(agent_dir=homedir())
     return Model[]
 end
 
+"""
+    all_models(agent_dir=homedir()) -> Vector{Model}
+
+Return the bundled catalog merged with the user catalog loaded from
+`agent_dir`; a user model with the same `(provider, id)` replaces the bundled
+one.
+"""
 function all_models(agent_dir=homedir())
     base = load_models()
     user = load_user_models(agent_dir)
@@ -87,6 +107,14 @@ function _default_model(provider, id)
     return Model(id, id, api, provider, base; context_window=128_000, max_tokens=16_384)
 end
 
+"""
+    find_model(pattern; provider=nothing, models=nothing) -> Union{Model,Nothing}
+
+Look up a model by exact `"provider/id"` or by a case-insensitive id fragment.
+With `provider` given, only that provider is searched. A `"provider/id"` miss
+returns a default-capability `Model` for that provider; a bare-id miss returns
+`nothing`. `models` overrides the catalog used for the search.
+"""
 function find_model(pattern::AbstractString; provider=nothing, models=nothing)
     catalog = models === nothing ? all_models() : models
     pat = String(pattern)

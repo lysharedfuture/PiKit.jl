@@ -54,6 +54,14 @@ function _catalog_api_key(provider)
     return _expand_key(get(conf, "apiKey", nothing))
 end
 
+"""
+    resolve_api_key(provider; cli_override=nothing, agent_dir=joinpath(homedir(), ".pikit", "agent")) -> Union{String,Nothing}
+
+Resolve the API key for `provider`. Lookup order: `cli_override`, then
+`auth.json` files under `agent_dir` and `~/.pikit`, then the catalog `apiKey`,
+then the provider environment variable (`provider_api_key_hint`). Returns
+`nothing` when no key is found.
+"""
 function resolve_api_key(provider::AbstractString; cli_override=nothing, agent_dir=joinpath(homedir(), ".pikit", "agent"))
     cli_override !== nothing && !isempty(cli_override) && return String(cli_override)
     for path in _auth_paths(agent_dir)

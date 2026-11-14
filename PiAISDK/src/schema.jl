@@ -23,6 +23,18 @@ function _validate_type(tool_name, schema, x, path)
         _schema_error(tool_name, path, "expected type $(join(types, " | ")), got $(typeof(x))")
 end
 
+"""
+    validate_arguments(tool_name, schema, args) -> Dict{String,Any}
+
+Validate decoded tool-call `args` against the JSON Schema `schema` supported
+by this package (`type`, `const`, `enum`, `anyOf`/`oneOf`/`allOf`, string and
+number ranges, object properties, and array items) and return them as a plain
+`Dict{String,Any}`.
+
+# Throws
+- `ArgumentError`: `args` is not an object or violates `schema`; the message
+  names `tool_name` and the failing JSON path.
+"""
 function validate_arguments(tool_name::AbstractString, schema::Dict{String,Any}, args)
     args isa AbstractDict || _schema_error(tool_name, "\$", "arguments must be an object")
     _validate_schema(tool_name, schema, args, "\$")

@@ -119,6 +119,20 @@ function _find_unique(text::String, needle::String)
     return positions
 end
 
+"""
+    edit_tool(cwd::String)
+
+Create the `edit` tool. Each call applies one or more exact-text replacements
+to a file; every `oldText` must match the original file uniquely and edits must
+not overlap. The result includes a line diff and a unified patch, and edits run
+sequentially under the file-mutation lock.
+
+# Arguments
+- `cwd::String`: working directory used to resolve relative paths.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function edit_tool(cwd::String)
     execute = function (id, args, signal, on_update)
         edits = normalize_edits(args)

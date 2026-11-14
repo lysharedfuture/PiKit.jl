@@ -1,5 +1,32 @@
 const LOG_TAG = "coding_runtime"
 
+"""
+    AgentSession
+
+High-level coding agent runtime wrapping a `PiAgentCore.Agent` and a
+[`SessionManager`](@ref). It owns the tool set, model, reasoning level, retry
+policy, and event listeners.
+
+# Fields
+- `agent::PiAgentCore.Agent`: underlying agent.
+- `session::SessionManager`: persistent conversation log.
+- `cwd::String`: working directory.
+- `model::PiAISDK.Model`: active model.
+- `thinking_level::String`: reasoning level.
+- `tools::Vector{PiAgentCore.Tool}`: registered tools.
+- `auto_compaction::Bool`: compact automatically near the context limit.
+- `retry::RetryPolicy`: retry policy.
+- `settings::Dict{String,Any}`: merged settings.
+- `listeners::Vector{Function}`: event subscribers.
+- `listener_lock::ReentrantLock`: guards `listeners`.
+- `last_assistant`: most recent assistant message of the current run.
+- `retry_attempt::Int`: retries performed in the current run.
+- `overflow_recovered::Bool`: whether the run already recovered from overflow.
+- `is_compacting::Bool`: whether compaction is in progress.
+- `abort_requested::Bool`: whether an abort was requested.
+- `agent_dir::String`: agent data directory.
+- `api_key::Union{Nothing,String}`: optional API key override.
+"""
 mutable struct AgentSession
     agent::PiAgentCore.Agent
     session::SessionManager
@@ -21,6 +48,19 @@ mutable struct AgentSession
     api_key::Union{Nothing,String}
 end
 
+"""
+    subscribe(s::AgentSession, f::Function)
+
+Register an event listener that is called with every session event, including
+agent events and lifecycle events such as `entry_appended` and `agent_settled`.
+
+# Arguments
+- `s::AgentSession`: session to observe.
+- `f::Function`: listener receiving one event object.
+
+# Returns
+A zero-argument function that removes the listener.
+"""
 function subscribe(s::AgentSession, f::Function)
     lock(s.listener_lock) do
         push!(s.listeners, f)
@@ -81,6 +121,39 @@ function sync_agent_context!(s::AgentSession)
     return nothing
 end
 
+"""
+    create_agent_session(; cwd=pwd(), model::PiAISDK.Model, session_manager::SessionManager,
+                         settings=Dict{String,Any}(), tools_names=DEFAULT_TOOL_NAMES,
+                         thinking_level="off", system_prompt=nothing,
+                         append_system_prompt=nothing, no_context_files=false,
+                         trusted=false, agent_dir=default_agent_dir(), api_key=nothing)
+
+Build a fully wired [`AgentSession`](@ref): create the tools, restore context
+from the session, prepend a system message when needed, and subscribe the
+persistence and compaction handler.
+
+# Arguments
+- `cwd`: working directory.
+- `model`: model to run.
+- `session_manager`: persistent session to use.
+- `settings`: merged settings (retry, compaction, API keys, shell path).
+- `tools_names`: tool names to create.
+- `thinking_level`: initial reasoning level.
+- `system_prompt`, `append_system_prompt`, `no_context_files`, `trusted`:
+  forwarded to system-prompt construction.
+- `agent_dir`: agent data directory.
+- `api_key`: explicit API key, overriding stored credentials.
+
+# Returns
+An [`AgentSession`](@ref).
+
+# Example
+```julia
+manager = create_session(pwd(); in_memory=true)
+session = create_agent_session(; model=model, session_manager=manager)
+prompt!(session, "Summarize this repository")
+```
+"""
 function create_agent_session(; cwd::String=pwd(), model::PiAISDK.Model, session_manager::SessionManager,
                               settings::Dict{String,Any}=Dict{String,Any}(),
                               tools_names=DEFAULT_TOOL_NAMES,
@@ -170,6 +243,27 @@ function _handle_agent_event!(s::AgentSession, ev)
     return nothing
 end
 
+"""
+    prompt!(s::AgentSession, text::AbstractString; images=PiAISDK.ImageContent[])
+    prompt!(s::AgentSession, messages::AbstractVector{<:PiAISDK.AbstractMessage})
+
+Send a new user turn to the agent and run it to completion, including
+automatic retry, context-overflow recovery, and threshold compaction.
+
+# Arguments
+- `s::AgentSession`: running session.
+- `text::AbstractString`: user text.
+- `images`: image attachments to include with the text.
+- `messages`: pre-built messages to send instead of text.
+
+# Returns
+`nothing`; observe progress through [`subscribe`](@ref PiCodingAgent.subscribe).
+
+# Example
+```julia
+prompt!(session, "What does src/PiCodingAgent.jl export?")
+```
+"""
 function prompt!(s::AgentSession, text::AbstractString; images=PiAISDK.ImageContent[])
     s.agent.state.model = s.model
     s.agent.state.thinking_level = s.thinking_level
@@ -190,6 +284,15 @@ function prompt!(s::AgentSession, messages::AbstractVector{<:PiAISDK.AbstractMes
     return finish_run!(s)
 end
 
+"""
+    continue!(s::AgentSession)
+
+Resume the agent from its current messages, for example after appending tool
+results. Runs the same post-processing as [`prompt!`](@ref PiCodingAgent.prompt!).
+
+# Returns
+`nothing`.
+"""
 function continue!(s::AgentSession)
     s.abort_requested = false
     s.retry_attempt = 0
@@ -276,6 +379,28 @@ function finish_run!(s::AgentSession)
     end
 end
 
+"""
+    compact!(s::AgentSession; reason="manual", instructions=nothing,
+              keep_recent_tokens=nothing, reserve_tokens=nothing)
+
+Compact the session with the current model, reading defaults from the session
+settings. `instructions` is accepted for API compatibility and currently
+unused.
+
+# Arguments
+- `s::AgentSession`: session to compact.
+- `reason::String`: label reported in compaction events.
+- `keep_recent_tokens`: override for the retained recent tokens.
+- `reserve_tokens`: override for the reserved context tokens.
+
+# Returns
+The appended [`CompactionEntry`](@ref), or `nothing`.
+
+# Example
+```julia
+compact!(session)
+```
+"""
 function compact!(s::AgentSession; reason::String="manual", instructions=nothing,
                   keep_recent_tokens=nothing, reserve_tokens=nothing)
     s.is_compacting = true
@@ -291,30 +416,84 @@ function compact!(s::AgentSession; reason::String="manual", instructions=nothing
     end
 end
 
+"""
+    abort!(s::AgentSession)
+
+Request cancellation of the current run. The agent stops at the next safe point
+and the run settles with `aborted=true`.
+
+# Returns
+`nothing`.
+"""
 function abort!(s::AgentSession)
     s.abort_requested = true
     PiAgentCore.abort!(s.agent)
     return nothing
 end
 
+"""
+    steer!(s::AgentSession, text::AbstractString)
+
+Queue a steering message that is injected into the agent while the current turn
+runs.
+
+# Arguments
+- `s::AgentSession`: running session.
+- `text::AbstractString`: steering text.
+
+# Returns
+`nothing`.
+"""
 function steer!(s::AgentSession, text::AbstractString)
     PiAgentCore.steer!(s.agent, text)
     emit_session(s, (type="queue_update", steering=String[m isa PiAISDK.UserMessage ? (m.content isa AbstractString ? m.content : "") : "" for m in s.agent.steering.messages], followUp=String[]))
     return nothing
 end
 
+"""
+    follow_up!(s::AgentSession, text::AbstractString)
+
+Queue a message that runs after the current turn finishes.
+
+# Arguments
+- `s::AgentSession`: running session.
+- `text::AbstractString`: follow-up text.
+
+# Returns
+`nothing`.
+"""
 function follow_up!(s::AgentSession, text::AbstractString)
     PiAgentCore.follow_up!(s.agent, text)
     emit_session(s, (type="queue_update", steering=String[], followUp=String[String(text)]))
     return nothing
 end
 
+"""
+    clear_queues!(s::AgentSession)
+
+Drop all queued steering and follow-up messages.
+
+# Returns
+`nothing`.
+"""
 function clear_queues!(s::AgentSession)
     PiAgentCore.clear_queues!(s.agent)
     emit_session(s, (type="queue_update", steering=String[], followUp=String[]))
     return nothing
 end
 
+"""
+    set_model!(s::AgentSession, model::PiAISDK.Model)
+
+Switch the active model and record a [`ModelChangeEntry`](@ref) in the session.
+
+# Arguments
+- `s::AgentSession`: session to update.
+- `model::PiAISDK.Model`: new model.
+
+# Returns
+`nothing`.
+"""
 function set_model!(s::AgentSession, model::PiAISDK.Model)
     s.model = model
     s.agent.state.model = model
@@ -323,6 +502,21 @@ function set_model!(s::AgentSession, model::PiAISDK.Model)
     return nothing
 end
 
+"""
+    set_thinking_level!(s::AgentSession, level::String)
+
+Set the reasoning level and record a [`ThinkingLevelChangeEntry`](@ref).
+
+# Arguments
+- `s::AgentSession`: session to update.
+- `level::String`: one of `PiAISDK.THINKING_LEVELS`.
+
+# Returns
+`nothing`.
+
+# Throws
+`ArgumentError` for an unknown level.
+"""
 function set_thinking_level!(s::AgentSession, level::String)
     level in PiAISDK.THINKING_LEVELS || throw(ArgumentError("Unknown thinking level: $(level)"))
     s.thinking_level = level
@@ -333,6 +527,18 @@ function set_thinking_level!(s::AgentSession, level::String)
     return nothing
 end
 
+"""
+    set_session_name!(s::AgentSession, name::String)
+
+Set the session display name and record a [`SessionInfoEntry`](@ref).
+
+# Arguments
+- `s::AgentSession`: session to update.
+- `name::String`: display name.
+
+# Returns
+`nothing`.
+"""
 function set_session_name!(s::AgentSession, name::String)
     append_entry!(s.session, SessionInfoEntry(new_entry_id(Set{String}(e.id for e in s.session.entries if e.id !== nothing)),
         s.session.leaf_id, now_iso(), name, Dict{String,Any}()))
@@ -340,6 +546,15 @@ function set_session_name!(s::AgentSession, name::String)
     return nothing
 end
 
+"""
+    get_state(s::AgentSession)
+
+Return a snapshot of session state.
+
+# Returns
+`Dict{String,Any}` with `sessionId`, `sessionFile`, `model`, `thinkingLevel`,
+`isStreaming`, and `messageCount`.
+"""
 function get_state(s::AgentSession)
     return Dict{String,Any}(
         "sessionId" => s.session.header.id,
@@ -351,12 +566,29 @@ function get_state(s::AgentSession)
     )
 end
 
+"""
+    settle!(s::AgentSession)
+
+Wait until the agent is idle and emit a final `agent_settled` event.
+
+# Returns
+`nothing`.
+"""
 function settle!(s::AgentSession)
     PiAgentCore.wait_idle(s.agent)
     emit_session(s, (type="agent_settled", aborted=s.abort_requested))
     return nothing
 end
 
+"""
+    close!(s::AgentSession)
+
+Abort and wait for the agent, then close the session file. The session is not
+usable afterwards.
+
+# Returns
+`nothing`.
+"""
 function close!(s::AgentSession)
     PiAgentCore.abort!(s.agent)
     PiAgentCore.wait_idle(s.agent)

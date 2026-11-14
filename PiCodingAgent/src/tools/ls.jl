@@ -9,14 +9,43 @@ const LS_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    LsOperations
+
+Hooks used by [`ls_tool`](@ref).
+
+# Fields
+- `exists::Function`: `path -> Bool`, checks existence.
+- `isdir::Function`: `path -> Bool`, checks that the path is a directory.
+- `readdir::Function`: `path -> Vector{String}`, lists entries.
+"""
 struct LsOperations
     exists::Function
     isdir::Function
     readdir::Function
 end
 
+"""
+    DEFAULT_LS_OPERATIONS
+
+[`LsOperations`](@ref) backed by the local filesystem.
+"""
 const DEFAULT_LS_OPERATIONS = LsOperations(path -> ispath(path), path -> isdir(path), path -> readdir(path))
 
+"""
+    ls_tool(cwd::String; operations::LsOperations=DEFAULT_LS_OPERATIONS)
+
+Create the `ls` tool. Entries are sorted alphabetically, directories carry a
+trailing `/`, and output is capped at the requested number of entries or
+[`DEFAULT_MAX_BYTES`](@ref) bytes.
+
+# Arguments
+- `cwd::String`: working directory.
+- `operations::LsOperations`: filesystem hooks.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function ls_tool(cwd::String; operations::LsOperations=DEFAULT_LS_OPERATIONS)
     execute = function (id, args, signal, on_update)
         dir_path = resolve_to_cwd(get(args, "path", "."), cwd)

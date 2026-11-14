@@ -1,11 +1,24 @@
 const LOG_TAG = "pikit_cli_options"
 
+"""
+    CLIError(message; code=2)
+
+Command-line usage error. `code` is the process exit code reported by
+`PiKit.main` when the error is not caught earlier.
+"""
 struct CLIError <: Exception
     message::String
     code::Int
 end
 CLIError(message; code=2) = CLIError(String(message), code)
 
+"""
+    CLIOptions()
+
+Parsed command-line options. Defaults mean "not specified on the command line";
+`parse_cli` fills the fields from `argv` and resolves the output `mode` when it
+was not given.
+"""
 Base.@kwdef mutable struct CLIOptions
     print::Bool = false
     mode::Union{Nothing,String} = nothing
@@ -119,6 +132,16 @@ function _assign_option!(opts::CLIOptions, arg::String, args, i)
     return i
 end
 
+"""
+    parse_cli(args) -> CLIOptions
+
+Parse command-line arguments. `--` terminates option parsing; `@path` arguments
+read a text file into the prompt or attach an image as base64 (rejected in RPC
+mode). The mode defaults to `repl` on a TTY and `text` otherwise.
+
+Throws [`CLIError`](@ref) for unknown options, missing values, invalid modes,
+thinking levels or session ids.
+"""
 function parse_cli(args)
     opts = CLIOptions()
     i = 1
@@ -158,10 +181,23 @@ function parse_cli(args)
     return opts
 end
 
+"""
+    initial_prompt(opts::CLIOptions) -> String
+
+Join the prompt parts collected by [`parse_cli`](@ref) with single spaces.
+"""
 function initial_prompt(opts::CLIOptions)
     return join(opts.prompt_parts, " ")
 end
 
+"""
+    resolve_tool_names(opts::CLIOptions, defaults=DEFAULT_TOOL_NAMES) -> Vector{String}
+
+Compute the tool list from the tool-related options. A list consisting only of
+`+name`/`-name` items modifies `defaults`; any other list replaces them.
+`--no-builtin-tools` starts from an empty list, `--no-tools` returns an empty
+list, and `--exclude-tools` is applied last with `*` wildcard support.
+"""
 function resolve_tool_names(opts::CLIOptions, defaults=DEFAULT_TOOL_NAMES)
     names = String[defaults...]
     if opts.no_tools
@@ -192,6 +228,7 @@ function resolve_tool_names(opts::CLIOptions, defaults=DEFAULT_TOOL_NAMES)
     return names
 end
 
+"""Help text printed by `--help`."""
 const HELP_TEXT = """
 Usage: pikit [options] [prompt]
 
@@ -224,6 +261,13 @@ Options:
   -h, --help                  Show this help
 """
 
+"""
+    list_models_text(search=nothing) -> String
+
+Render the model catalog as one `<provider>/<id>\\t<name>` line per model, sorted
+by provider and id. `search` filters case-insensitively on the model id, name or
+provider.
+"""
 function list_models_text(search=nothing)
     models = all_models()
     if search !== nothing && !isempty(search)
