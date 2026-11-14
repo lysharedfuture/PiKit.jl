@@ -72,6 +72,7 @@
 - 登记前包必须是干净的 git 工作区，登记版本 MUST 与将提交 General 的版本一致。
 - 本地 registry 的 `repo`/`subdir`/`git-tree-sha1` MUST 与仓库 commit 一致；registry 建立后，提交 General 前 MUST 运行 `scripts/check-registry-parity.jl`。
 - 同一包版本 MUST NOT 在多个 registry 中以不同 tree 出现；General 合并后 SHOULD 删除本地对应条目。
+- 根包（`PiKit`）的 registry 条目 MUST 指向实际提交 General 的同一 commit；MUST NOT 以不同 tree 提前登记同一版本。
 - `LocalRegistry.jl` 的 `register` 默认 `push=false`；推送 registry 仓库前 MUST 按“GitHub 提交与发布”取得确认。
 - 使用本地 registry MUST NOT 放宽 General 的任何门禁（名称、许可、文档、compat）。
 

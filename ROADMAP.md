@@ -29,27 +29,9 @@
 - faux 端到端、JSON/RPC 冒烟通过；`grep` 使用 `ripgrep_jll`，`find` 使用 `fd_jll`（10.3.0）；运行期工具下载器与 `--offline`/`PIKIT_OFFLINE` 已删除；`.gitignore` 集成冒烟通过。
 - GitHub 仓库已创建：`https://github.com/lysharedfuture/PiKit.jl`；`v0.1.0`、`v0.1.1` 均已注册并由 TagBot 创建 tag。
 - 文档已交付：`docs/src/cli.md`、`json.md`、`sessions.md`、`upstream-compat.md`、`julia-improvements.md`，四包 API reference（`sdk.md`/`agent-core.md`/`coding-agent.md`/`pikit.md`）与各包 README；文档、导出 API 与子包 tag 的纪律见 `.omp/RULES.md`。
+- 二期 2A：四包拆分完成并合并（`PiAISDK`/`PiAgentCore`/`PiCodingAgent` + `PiKit` CLI/聚合）；`find` 改用 `fd_jll`；行为快照、边界检查、四包 CI 与文档门禁生效；`PiAISDK 0.2.0` 注册收尾中。
 
-## 进行中 / In Progress
-
-- **0.2.0 注册**：`PiAISDK` 的 General PR #175832 已通过 AutoMerge 判定（`New package. Approved. name="PiAISDK"`），等待评审评论加 `[noblock]` 或 maintainer 手动合并；`PiAgentCore`、`PiCodingAgent`、`PiKit 0.2.0` 待前者合并后依次触发。
-- **发布流水线**：TagBot 已按 monorepo 配置四个 step（根 `vX.Y.Z`、子包 `<Package>-vX.Y.Z`）；Codecov 已用 OIDC 接入，但仓库尚未安装 Codecov App，上传暂报 `Repository not found`（CI 保持绿）。
-- **本地开发注册表**：`PiKitRegistry` 尚未创建；`.omp/RULES.md` 的 LocalRegistry 规则与 `scripts/check-registry-parity.jl` 已就绪，建库后启用。
-
-## 已完成变更 / Completed Changes
-
-| 功能 | Change | 状态 |
-|---|---|---|
-| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；`v0.1.0`、`v0.1.1` 已注册并 tag |
-| 二期 2A 拆包 | `phase2a-package-split` | 四包拆分、CLI 归 `PiKit`、`find` 改用 `fd_jll`、行为快照、边界/文档/规则门禁全部完成；`PiAISDK 0.2.0` 注册中，其余三包待触发 |
-
-## 待办 / Planned
-
-### 一期（v0.1）：可交付闭环
-
-一期范围：单包 `PiKit`（`PiKit.AI` / `PiKit.AgentCore` / `PiKit.CodingAgent` 三模块）、`openai-completions` / `anthropic-messages` / `faux` 三个 Provider、8 个工具（read/bash/powershell/edit/write/grep/find/ls）、会话 v3 子集、print/JSON/RPC/行式 REPL、压缩/溢出/重试、CLI 子集。
-
-**状态：已完成；`v0.1.0`、`v0.1.1` 均已注册并 tag。**
+### 一期交付明细
 
 | 功能 | 说明 | Change |
 |---|---|---|
@@ -65,17 +47,27 @@
 
 **发布策略：一期即提交 General**（`PiKit` 名称已核对未被占用）。以 `0.x` 版本发布并明确 API 未冻结；注册合并后安装方式 `Pkg.add("PiKit")`，此前源码安装使用 `Pkg.develop(path=...)` 或 `Pkg.develop(url="https://github.com/lysharedfuture/PiKit.jl")`。注册 PR #175351 已合并。
 
-一期必须留下的“二期钩子”：
+## 进行中 / In Progress
 
-- 模块边界 = 上游包边界（`src/ai` / `src/agent_core` / `src/coding`），拆包只移动目录 + 独立 `Project.toml`。
-- `Provider` 注册表、`Tool.replay`/`output_schema` 字段位、`deferred` 透传、`context_edit` 只读——二期直接填充，不改协议。
-- 会话 reader 容错：未知 entry 保留、未知字段进 `extra`；durable 新 entry 对一期 reader 只是 `UnknownEntry`。
+- **0.2.0 注册**：`PiAISDK` 的 General PR #175832 已通过 AutoMerge 判定（`New package. Approved. name="PiAISDK"`），等待评审评论加 `[noblock]` 或 maintainer 手动合并；`PiAgentCore`、`PiCodingAgent`、`PiKit 0.2.0` 待前者合并后依次触发。
+- **发布流水线**：TagBot 已按 monorepo 配置四个 step（根 `vX.Y.Z`、子包 `<Package>-vX.Y.Z`）；Codecov 已用 OIDC 接入，但仓库尚未安装 Codecov App，上传暂报 `Repository not found`（CI 保持绿）。
+- **本地开发注册表**：`PiKitRegistry` 已创建（公开仓库），`PiAISDK`/`PiAgentCore`/`PiCodingAgent` 的 `0.2.0` 已登记并与 `main` 的 subdir tree 一致；`PiKit` 根包在 General `0.2.0` 提交时按同一 commit 登记，避免同版本双 tree。
+
+## 已完成变更 / Completed Changes
+
+| 功能 | Change | 状态 |
+|---|---|---|
+| 一期 v0.1 核心闭环 | `pikit-julia-port` | 代码/测试/文档完成；`v0.1.0`、`v0.1.1` 已注册并 tag |
+| 二期 2A 拆包 | `phase2a-package-split` | 四包拆分、CLI 归 `PiKit`、`find` 改用 `fd_jll`、行为快照、边界/文档/规则门禁全部完成；`PiAISDK 0.2.0` 注册中，其余三包待触发 |
+
+## 待办 / Planned
+
+2A 已完成（见“已完成变更”）；以下为 2B–2D 与三期。
 
 ### 二期（v0.2–v0.4）：可依赖、可恢复
 
 | 子阶段 | 内容 | 退出标准 | Change |
 |---|---|---|---|
-| **2A 拆包（已完成）** | `PiAISDK.jl` / `PiAgentCore.jl` / `PiCodingAgent.jl` + `PiKit` 聚合与 CLI 层；`find` 改用 `fd_jll`；边界检查、行为快照、四包 CI 与文档门禁 | 四包独立测试绿、snapshot 与 v0.1 一致（已完成）；`PiAISDK 0.2.0` 注册中，其余三包随后 | `changes/phase2a-package-split` |
 | **2B durable** | `PiDurable.jl`：持久化运行、effect 记录与 `replay(:never\|:safe)`、`deferred` 轮询、崩溃后续跑、`context_edit` 全语义、compaction `details`/`fromHook` | `kill -9` 后可续跑；durable JSONL store 可被上游 `pi-durable` 打开；重放不重复副作用 | `changes/phase2b-durable-runtime` |
 | **2C ai 广度** | `openai-responses`、`google-generative-ai`/vertex、bedrock、mistral、azure、images/classifiers、OAuth/login、long cache | 每 Provider 一套 mock 请求体快照 + 一次真实手工冒烟 | `changes/phase2c-ai-providers` |
 | **2D schema/mcp/telemetry** | 完整 `PiSchema.jl`（draft-7/2020-12、`$ref`、strict tools、grammar）；`PiMCP.jl` weakdep；`PiTelemetry.jl` 核心包 + NOOP/内存/render + AI 请求 span | schema 通过上游 fixture；MCP 连本地 server；遥测包注册、默认关闭、AI span/event/metrics 可断言 | `changes/phase2d-schema-mcp-telemetry` |
@@ -115,7 +107,7 @@ v1.0 判据：三个核心上游包（core/coding-agent/durable）的公开 API 
 
 - **0.2.0 注册未完成**：`PiAISDK` 的 PR #175832 已通过 AutoMerge，但有一条未带 `[noblock]` 的评审评论阻塞自动合并；`PiAgentCore`/`PiCodingAgent`/`PiKit 0.2.0` 需在前者合并后按序触发。
 - **Codecov 未生效**：CI 已用 OIDC 上传，但仓库未安装 Codecov App，日志为 `Repository not found`；覆盖率数据暂只保留 lcov artifact。
-- **本地注册表未建立**：`PiKitRegistry` 未创建，下游暂时仍依赖 `[sources]`/`Pkg.develop`；建库后按 `.omp/RULES.md` 的 LocalRegistry 流程启用。
+- **PiKit 根包未进本地 registry**：根包 tree 覆盖整个仓库，提前登记会与 General `0.2.0` 的 commit 产生同版本双 tree；发布时按 `.omp/RULES.md` 用同一 commit 登记。
 - **Windows PowerShell 实机未验证**：当前环境为 Linux；非 Windows 返回错误路径已有测试，`powershell` 的实际 Windows 冒烟待补。
 - **REPL TTY 手工验证未执行**：自动测试覆盖 stdin/print 路径；真实 TTY 下的斜杠命令、流式渲染与 Ctrl+C 中止需手工冒烟。
 - 旧 General PR #175350（0.1.0）与 #175809（`PiAI`，已被 `PiAISDK` 取代）仍处于 open 状态，等待维护者关闭。
@@ -164,6 +156,12 @@ ripgrep_jll（grep）；fd_jll（find）
 - 每次同步上游后更新 `docs/src/upstream-compat.md`（当前验证基线与差异表）；README/NOTICE/脚本不承担永久 pin 语义；偏差只减不增。
 - 0.x 期间允许破坏性变更，但必须附迁移说明；v1.0 起冻结。
 - 文档、导出 API、子包 tag 与注册前置的强制要求见 `.omp/RULES.md`，由 `scripts/check-project-rules.jl`、`test/docs_audit.jl` 与 CI `docs` job 执行。
+
+### 一期留下的接口钩子（已在 2A 兑现）
+
+- 模块边界 = 上游包边界（`src/ai` / `src/agent_core` / `src/coding`），拆包只移动目录 + 独立 `Project.toml`。
+- `Provider` 注册表、`Tool.replay`/`output_schema` 字段位、`deferred` 透传、`context_edit` 只读——二期直接填充，不改协议。
+- 会话 reader 容错：未知 entry 保留、未知字段进 `extra`；durable 新 entry 对一期 reader 只是 `UnknownEntry`。
 
 ## 待决决策 / Decisions Pending
 

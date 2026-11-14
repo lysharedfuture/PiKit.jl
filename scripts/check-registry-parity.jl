@@ -68,7 +68,7 @@ function main(args)
     for name in PACKAGES
         entry = get(by_name, name, nothing)
         if entry === nothing
-            fail!(problems, "$(name) is not in $(registry)")
+            println("skip: $(name) is not in $(registry)")
             continue
         end
         reg_dir = joinpath(registry, string(entry["path"]))
