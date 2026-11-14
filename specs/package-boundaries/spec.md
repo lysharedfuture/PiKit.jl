@@ -110,3 +110,41 @@ CLI 入口与模式实现 MUST 只位于 `PiKit`：参数解析、`print`/`json`
 
 - **WHEN** 环境中存在 `PiAISDK 0.3` 而 `PiKit` 兼容区间为 `0.2`
 - **THEN** 解析失败而不是静默混用
+
+### Requirement: Documentation
+
+每个包 MUST 提供 `README.md`，包含包定位、依赖链位置、上游映射、安装、可离线运行的示例与文档站链接。每个导出符号 MUST 有 docstring；`docs/make.jl` MUST 设置 `checkdocs = :exports`，且每个包 MUST 有 `@autodocs Modules = [<包>]` 页面并列入 `pages`。文档示例 MUST 由离线测试执行。
+
+#### Scenario: Missing docstring fails the gate
+
+- **WHEN** 删除任一导出的 docstring
+- **THEN** `test/docs_audit.jl` 与 CI 的 `docs` job 均失败
+
+#### Scenario: Subpackage README is mandatory
+
+- **WHEN** 删除 `PiCodingAgent/README.md`
+- **THEN** `scripts/check-project-rules.jl` 返回非零状态
+
+#### Scenario: Documented examples stay executable
+
+- **WHEN** 示例引用的 API 被改名或删除
+- **THEN** `test/docs_examples.jl` 失败
+
+### Requirement: Monorepo release tags
+
+所有发布 tag MUST 由 TagBot 创建。根包 `PiKit` 使用 `vX.Y.Z`；每个子包 MUST 有带 `subdir` 的独立 TagBot step，tag 形如 `<Package>-vX.Y.Z`。禁止手工创建或推送任何 release tag。
+
+#### Scenario: Missing subdir step is rejected
+
+- **WHEN** `.github/workflows/TagBot.yml` 缺少 `subdir: PiCodingAgent`
+- **THEN** `scripts/check-project-rules.jl` 返回非零状态
+
+#### Scenario: Manual tag is a violation
+
+- **WHEN** 有人手工创建 `PiAISDK-v0.2.0`
+- **THEN** review 要求删除该 tag，并由 TagBot 按 registry tree 重建
+
+#### Scenario: Root and subpackage tags are independent
+
+- **WHEN** 只发布 `PiKit` 的 `vX.Y.Z`
+- **THEN** 子包 tag 与其版本保持不变，反之亦然

@@ -1,6 +1,6 @@
 # RULES — PiKit 开发纪律
 
-> 本文件约束 PiKit 的开发纪律。各一级章节相互独立；目前包括 GitHub 提交与发布、发布 tag、日志，后续新增纪律追加同级章节。
+> 本文件约束 PiKit 的开发纪律。各一级章节相互独立；目前包括 GitHub 提交与发布、发布 tag（根包与子包）、注册前置检查、本地注册表、文档、日志，后续新增纪律追加同级章节。
 
 ## GitHub 提交与发布
 
@@ -11,12 +11,25 @@
 - 推送失败或部分成功时，MUST 报告实际远端状态，不得静默重试或改变目标。
 - tag 与 Release 仍须遵守下一节的 TagBot 规则。
 
-## 发布 tag
+## 发布 tag（根包与子包）
 
-- 所有发布 tag（包括 `v0.1.0`、`v0.1.1` 及后续版本）MUST 由 TagBot 创建。
+### 通用
+
+- 所有发布 tag（根包 `vX.Y.Z` 与子包 `<Package>-vX.Y.Z`）MUST 由 TagBot 创建。
 - 禁止手工 `git tag`、`gh release create` 或推送 release tag。
 - 注册合并后等待 `JuliaTagBot` 创建 tag 与 Release；TagBot workflow 见 `.github/workflows/TagBot.yml`。
 - 重新发布已注册版本前，先删除旧 tag/Release，再在最终 commit 上重新触发 `@JuliaRegistrator register`，让 TagBot 按 registry tree 重建 tag。
+- TagBot workflow MUST 为每个包提供一个独立 step；缺少 step 视为发布配置未完成。
+
+### 根包
+
+- 根包 `PiKit` 的 tag 形如 `vX.Y.Z`，由不带 `subdir` 的 TagBot step 创建。
+
+### 子包
+
+- 每个子包 MUST 有独立的 TagBot step 并设置 `subdir`（`PiAISDK`、`PiAgentCore`、`PiCodingAgent`）。
+- 子包 tag 形如 `<Package>-vX.Y.Z`；根包 tag 与子包 tag 互不替代。
+- 新增子包时 MUST 同时新增其 TagBot step 与 `docs/make.jl` 条目。
 
 ### Release notes
 
@@ -35,8 +48,42 @@
 - 新版本 MUST 写用户可见变化；破坏性变更 MUST 单独列出并说明影响。
 - 首次发布写 `Initial release ...`；后续版本按 `Added / Changed / Fixed / Breaking` 组织。
 - Release notes MUST 与触发评论在同一条消息内，不得另发评论后补；否则 Registrator 不会关联。
+- 子包触发行 MUST 带 `subdir=<dir>`，notes 格式与根包一致。
 - 修改 notes 后重新触发同一版本，注册 PR 会更新。
 - TagBot 会把同一段 notes 写入 GitHub Release。
+
+## 注册前置检查
+
+- 包名 MUST 至少 5 个 ASCII 字符，MUST NOT 以 `jl` 结尾、以 `Ju` 开头或包含 `julia`。
+- 包代码顶层目录（子包即子包目录）MUST 有 OSI 认可的 `LICENSE`。
+- `Project.toml` MUST 包含 `name`/`uuid`/`version`；`[compat]` MUST 为所有依赖与 `julia` 提供上界，且 `julia` 上界只覆盖有限个 breaking release。
+- 名称相似度 MUST 在提交注册前用 AutoMerge 官方 `meets_distance_check` 对当时 General 全量包名验证通过；判定相似时 MUST 改名，不得依赖 `Override AutoMerge: name similarity is okay` 掩盖长度或许可问题。
+- 注册顺序 MUST 为 `PiAISDK → PiAgentCore → PiCodingAgent → PiKit`；每条 Registrator 评论 MUST 内嵌 release notes（见“发布 tag / Release notes”）。
+- 版本策略：破坏性变更升 minor（`0.x` 内即为 minor），否则 patch；`PiKit` 的 `[compat]` 与三个子包版本 MUST 同步。已注册版本 MUST NOT 重复使用。
+- 提交注册前 MUST 运行 `scripts/check-project-rules.jl`，失败不得触发 Registrator。
+
+## 本地注册表（LocalRegistry）
+
+术语区分：`LocalRegistry.jl` 是生成/维护 registry 的**工具**；`PiKitRegistry` 是它生成的 **registry 仓库**。二者都不是包依赖——下游“使用”指 Pkg 通过 registry 解析包，而不是在代码里依赖某个包。
+
+- `LocalRegistry.jl` MUST 只安装在全局或共享开发环境，MUST NOT 出现在任何 `Project.toml` 的 `[deps]`/`[extras]`/`[targets]` 中。
+- `PiKitRegistry` MUST 由 Pkg 的 registry 机制发现（`Pkg.Registry.add`），MUST NOT 写入任何 `Project.toml`；包间版本约束写在 `[compat]`，`[sources]` 只是本地开发覆盖，二者都不构成对 registry 的依赖。
+- General 合并前，MAY 用 `PiKitRegistry` 让下游以 `Pkg.add("PiAISDK")` 等方式解析未注册子包；消费者不需要安装 `LocalRegistry.jl`。
+- 登记前包必须是干净的 git 工作区，登记版本 MUST 与将提交 General 的版本一致。
+- 本地 registry 的 `repo`/`subdir`/`git-tree-sha1` MUST 与仓库 commit 一致；registry 建立后，提交 General 前 MUST 运行 `scripts/check-registry-parity.jl`。
+- 同一包版本 MUST NOT 在多个 registry 中以不同 tree 出现；General 合并后 SHOULD 删除本地对应条目。
+- `LocalRegistry.jl` 的 `register` 默认 `push=false`；推送 registry 仓库前 MUST 按“GitHub 提交与发布”取得确认。
+- 使用本地 registry MUST NOT 放宽 General 的任何门禁（名称、许可、文档、compat）。
+
+## 文档（README 与导出 API）
+
+- 每个包目录（含 monorepo 子包）MUST 有 `README.md`，至少包含：包定位、在 `PiAISDK ← PiAgentCore ← PiCodingAgent ← PiKit` 中的位置、上游映射、安装、一个可离线执行的最小示例、文档站链接。
+- 每个导出符号 MUST 有 docstring；判定标准为 `Base.Docs.undocumented_names(mod)` 为空。
+- `docs/make.jl` MUST 设 `checkdocs = :exports`；每个包 MUST 在 `pages` 中有使用 `@autodocs Modules = [<包>]` 的页面。
+- 文档示例 MUST 进入测试（`test/docs_examples.jl` 或等价），使用 `faux` provider 或其它离线路径，MUST NOT 依赖网络。
+- 根 `README.md` MUST 顶部有 docs badge 与文档站链接；未发布版本指向 `/dev/`，发布后改为 `/stable/`。
+- 修改导出面、示例或文档页时 MUST 同步更新 docstring、`@autodocs` 页面与示例测试；`docs` job 或 `test/docs_audit.jl` 失败即阻断合并。
+- 新增包 MUST 同时新增 README、`@autodocs` 页面、`docs/make.jl` 的 `modules`/`pages` 条目与 TagBot step。
 
 ## 日志硬纪律
 
