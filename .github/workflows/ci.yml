@@ -16,6 +16,8 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Package boundaries
         run: julia --startup-file=no --project=scripts scripts/check-package-boundaries.jl
+      - name: Project rules
+        run: julia --startup-file=no --project=scripts scripts/check-project-rules.jl
 
   test:
     runs-on: ubuntu-latest

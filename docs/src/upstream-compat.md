@@ -19,12 +19,12 @@ ahead of the tag; the commit is authoritative for reproduction.
 
 Upstream ships one npm package per layer; PiKit mirrors that mapping:
 
-| PiKit package | Upstream package | Notes |
-|---|---|---|
-| `PiAISDK` | `@earendil-works/pi-ai` | `HTTP`/`JSON` + stdlib only |
-| `PiAgentCore` | `@earendil-works/pi-agent-core` | depends on `PiAISDK` |
-| `PiCodingAgent` | `@earendil-works/pi-coding-agent` (library part) | tools, session, compaction, runtime |
-| `PiKit` | `@earendil-works/pi-coding-agent` (CLI/aggregate part) | `print`/`json`/`rpc`/`repl`, config, log sink |
+| PiKit package | Upstream package | Notes | Docs |
+|---|---|---|---|
+| `PiAISDK` | `@earendil-works/pi-ai` | `HTTP`/`JSON` + stdlib only | [sdk.md](sdk.md) |
+| `PiAgentCore` | `@earendil-works/pi-agent-core` | depends on `PiAISDK` | [agent-core.md](agent-core.md) |
+| `PiCodingAgent` | `@earendil-works/pi-coding-agent` (library part) | tools, session, compaction, runtime | [coding-agent.md](coding-agent.md) |
+| `PiKit` | `@earendil-works/pi-coding-agent` (CLI/aggregate part) | `print`/`json`/`rpc`/`repl`, config, log sink | [pikit.md](pikit.md) |
 
 Upstream exports CLI parsing from the `pi-coding-agent` package root
 (`packages/coding-agent/src/index.ts:3`); PiKit deliberately keeps the library
