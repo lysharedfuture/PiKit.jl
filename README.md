@@ -1,9 +1,13 @@
 # PiKit.jl
 
+[![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://lysharedfuture.github.io/PiKit.jl/dev/)
+[![codecov](https://codecov.io/gh/lysharedfuture/PiKit.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/lysharedfuture/PiKit.jl)
+
 Unofficial Julia port of the [pi](https://github.com/earendil-works/pi) agent
 stack (`pi-ai`, `pi-agent-core`, `pi-coding-agent`). The currently verified
 upstream baseline, capability matrix, known deviations, and sync procedure are
 tracked in [`docs/src/upstream-compat.md`](docs/src/upstream-compat.md).
+API documentation (development version) lives at <https://lysharedfuture.github.io/PiKit.jl/dev/>.
 
 PiKit is an independent MIT-licensed project. It is not affiliated with the
 upstream authors.

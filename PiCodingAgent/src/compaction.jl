@@ -87,6 +87,20 @@ function _content_chars(content)
     return chars
 end
 
+"""
+    estimate_tokens(message)
+
+Estimate the token count of a single message using a characters/4 heuristic.
+Supports `PiAISDK` system, user, assistant, and tool-result messages plus
+[`BashExecutionMessage`](@ref) and [`CompactionSummaryMessage`](@ref); other
+message types estimate zero tokens.
+
+# Arguments
+- `message`: a conversation message.
+
+# Returns
+`Int` estimated tokens.
+"""
 function estimate_tokens(m::PiAISDK.SystemMessage)
     chars = _content_chars(m.content)
     if m.sections !== nothing
@@ -128,6 +142,19 @@ function last_usage_info(messages)
     return nothing
 end
 
+"""
+    estimate_context_tokens(messages)
+
+Estimate the token count of a conversation. When a valid assistant message
+reports usage, its total anchors the estimate and only later messages are
+estimated individually.
+
+# Arguments
+- `messages`: conversation messages.
+
+# Returns
+`Int` estimated context tokens.
+"""
 function estimate_context_tokens(messages)
     info = last_usage_info(messages)
     if info === nothing
@@ -137,6 +164,12 @@ function estimate_context_tokens(messages)
     return info.tokens + trailing
 end
 
+"""
+    should_compact(context_tokens::Int, context_window::Int, reserve_tokens::Int)
+
+Return `true` when `context_tokens` exceeds
+`context_window - reserve_tokens`.
+"""
 function should_compact(context_tokens::Int, context_window::Int, reserve_tokens::Int)
     return context_tokens > context_window - reserve_tokens
 end
@@ -150,6 +183,20 @@ function _is_turn_start(m)
     return m isa PiAISDK.UserMessage || m isa BashExecutionMessage || m isa CompactionSummaryMessage
 end
 
+"""
+    find_cut_point(messages; keep_recent_tokens=20_000)
+
+Choose where compaction should split a conversation: the oldest message that
+keeps roughly `keep_recent_tokens` of recent context, adjusted to a turn
+boundary so an assistant turn is never split.
+
+# Arguments
+- `messages`: conversation messages.
+- `keep_recent_tokens::Int`: approximate tokens to leave unsummarized.
+
+# Returns
+`Int` index of the first message to keep.
+"""
 function find_cut_point(messages; keep_recent_tokens=20_000)
     total = 0
     cut = 1
@@ -236,6 +283,30 @@ function summarize(model::PiAISDK.Model, messages, opts::PiAISDK.StreamOptions, 
     end
 end
 
+"""
+    compact!(sm::SessionManager, model::PiAISDK.Model, opts::PiAISDK.StreamOptions,
+             retry::RetryPolicy; reason="manual", keep_recent_tokens=20_000,
+             reserve_tokens=16_384, signal=nothing, emit=(ev)->nothing)
+
+Summarize older messages of a session with `model` and append a
+[`CompactionEntry`](@ref). Emits `compaction_start` and `compaction_end` events
+through `emit`.
+
+# Arguments
+- `sm::SessionManager`: session to compact.
+- `model::PiAISDK.Model`: model used to write the summary.
+- `opts::PiAISDK.StreamOptions`: stream options copied into the request.
+- `retry::RetryPolicy`: retry policy for summarization failures.
+- `reason::String`: label reported in events (for example `"manual"`).
+- `keep_recent_tokens`: approximate recent tokens left untouched.
+- `reserve_tokens`: accepted for API compatibility; currently unused.
+- `signal`: abort token.
+- `emit`: event callback.
+
+# Returns
+The appended [`CompactionEntry`](@ref), or `nothing` when compaction is skipped
+or fails.
+"""
 function compact!(sm::SessionManager, model::PiAISDK.Model, opts::PiAISDK.StreamOptions,
                   retry::RetryPolicy; reason::String="manual", keep_recent_tokens=20_000,
                   reserve_tokens=16_384, signal=nothing, emit=(ev)->nothing)

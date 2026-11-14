@@ -9,11 +9,35 @@ mutable struct FauxState
 end
 const FAUX_STATE = FauxState(Any[], 0, nothing, nothing, ReentrantLock())
 
+"""
+    faux_text(s) -> TextContent
+
+Build a text block for a queued faux response.
+"""
 faux_text(s) = TextContent(String(s))
+
+"""
+    faux_thinking(s) -> ThinkingContent
+
+Build a thinking block for a queued faux response.
+"""
 faux_thinking(s) = ThinkingContent(String(s); thinking_signature=nothing)
+
+"""
+    faux_tool_call(name, args; id=nothing) -> ToolCall
+
+Build a tool-call block for a queued faux response. The id defaults to a
+timestamp-based value.
+"""
 faux_tool_call(name, args; id=nothing) = ToolCall(something(id, "call_$(time_millis())"), String(name),
                                                 Dict{String,Any}(String(k) => plain(v) for (k, v) in args))
 
+"""
+    faux_assistant_message(content; stop_reason="stop", error_message=nothing, usage=empty_usage(), model_id="faux-1") -> AssistantMessage
+
+Build an assistant message attributed to the faux provider, for use as a
+queued faux response.
+"""
 function faux_assistant_message(content; stop_reason="stop", error_message=nothing, usage=empty_usage(),
                                 model_id="faux-1")
     return AssistantMessage(content; api="faux", provider="faux", model=model_id,
@@ -21,6 +45,13 @@ function faux_assistant_message(content; stop_reason="stop", error_message=nothi
                             usage=copy_usage(usage))
 end
 
+"""
+    set_responses!(steps)
+
+Replace the faux response queue with `steps` and reset the call counter. A
+step is an `AssistantMessage`, content block, `String`, `nothing`, or a
+function `(model, ctx) -> step`; each stream call consumes one step.
+"""
 function set_responses!(steps)
     lock(FAUX_STATE.lock) do
         FAUX_STATE.responses = Any[steps...]
@@ -29,6 +60,12 @@ function set_responses!(steps)
     return nothing
 end
 
+"""
+    append_responses!(steps)
+
+Append `steps` to the end of the faux response queue without resetting the
+call counter.
+"""
 function append_responses!(steps)
     lock(FAUX_STATE.lock) do
         append!(FAUX_STATE.responses, steps)
@@ -36,6 +73,12 @@ function append_responses!(steps)
     return nothing
 end
 
+"""
+    reset_faux!()
+
+Clear the faux response queue, the call counter, and the recorded last
+context and model.
+"""
 function reset_faux!()
     lock(FAUX_STATE.lock) do
         empty!(FAUX_STATE.responses)
@@ -46,8 +89,23 @@ function reset_faux!()
     return nothing
 end
 
+"""
+    faux_call_count() -> Int
+
+Number of faux stream calls since the last `set_responses!` or `reset_faux!`.
+"""
 faux_call_count() = lock(() -> FAUX_STATE.call_count, FAUX_STATE.lock)
+"""
+    faux_last_context() -> Union{Nothing,LLMContext}
+
+Context passed to the most recent faux stream call.
+"""
 faux_last_context() = lock(() -> FAUX_STATE.last_context, FAUX_STATE.lock)
+"""
+    faux_last_model() -> Union{Nothing,Model}
+
+Model passed to the most recent faux stream call.
+"""
 faux_last_model() = lock(() -> FAUX_STATE.last_model, FAUX_STATE.lock)
 
 function faux_chunks(text::String)
@@ -161,6 +219,16 @@ function stream_faux(model::Model, ctx::LLMContext, opts::StreamOptions)
     end
 end
 
+"""
+    load_faux_responses(path) -> Vector{Any}
+
+Read a JSON array of faux response steps from `path`. Each object is decoded
+as `{"toolCall": {...}}`, `{"thinking": "..."}`, or `{"content": ...,
+"stopReason": ..., "errorMessage": ...}`; other objects are skipped.
+
+# Throws
+- `ArgumentError`: the file does not contain a JSON array.
+"""
 function load_faux_responses(path::AbstractString)
     raw = json_parse(read(path, String))
     raw isa AbstractVector || throw(ArgumentError("faux responses must be a JSON array"))
@@ -186,6 +254,19 @@ function load_faux_responses(path::AbstractString)
     return steps
 end
 
+"""
+    register_faux_provider!(; models=["faux-1"], responses=Any[])
+
+Register the `"faux"` provider and one model per entry in `models`, and
+replace the response queue with `responses`. Used for offline testing.
+
+# Example
+```julia
+register_faux_provider!(responses=[faux_text("Hello from faux")])
+final = result(stream(Model("faux-1", "Faux", "faux", "faux", "http://faux.invalid"),
+                      LLMContext(AbstractMessage[SystemMessage(""), UserMessage("hi")])))
+```
+"""
 function register_faux_provider!(; models=["faux-1"], responses=Any[])
     set_responses!(responses)
     for id in models

@@ -27,6 +27,13 @@ function _named_tuple_to_dict(x)
     return x
 end
 
+"""
+    json_mode_event(ev) -> Dict{String,Any}
+
+Convert an agent event to its JSON-mode dictionary. `MessageUpdateEvent` uses
+the wire shape described in `docs/src/json.md`, which omits the shared
+`partial` assistant message.
+"""
 function json_mode_event(ev)
     if ev isa PiAgentCore.MessageUpdateEvent
         return _wire_message_update(ev)
@@ -42,6 +49,12 @@ function json_mode_event(ev)
     return Dict{String,Any}("type" => string(typeof(ev)))
 end
 
+"""
+    session_json_event(s::AgentSession, ev) -> Dict{String,Any}
+
+[`json_mode_event`](@ref) plus retry state: `agent_end` events gain `willRetry`
+computed from the session retry policy and the last assistant message.
+"""
 function session_json_event(s::AgentSession, ev)
     d = json_mode_event(ev)
     if get(d, "type", "") == "agent_end"
@@ -62,6 +75,13 @@ function session_json_event(s::AgentSession, ev)
     return d
 end
 
+"""
+    run_json_mode(s::AgentSession, prompt_text::String; images=ImageContent[])
+
+Send one prompt while streaming JSON events (session header first, then one
+event per line) to stdout. stdout is protocol only; logs go to the file sink.
+Returns the process exit code.
+"""
 function run_json_mode(s::AgentSession, prompt_text::String; images=PiAISDK.ImageContent[])
     println(stdout, json_write(header_to_json(s.session.header)))
     flush(stdout)

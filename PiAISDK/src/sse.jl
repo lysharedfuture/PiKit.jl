@@ -1,5 +1,11 @@
 const LOG_TAG = "ai_sse"
 
+"""
+    SSEEvent(data, event, id)
+
+One dispatched Server-Sent Events record: the joined `data` lines, the
+optional `event` name, and the optional `id`.
+"""
 struct SSEEvent
     data::String
     event::Union{Nothing,String}

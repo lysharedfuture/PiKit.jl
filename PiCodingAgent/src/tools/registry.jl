@@ -1,6 +1,18 @@
 const LOG_TAG = "coding_tools_registry"
 
+"""
+    DEFAULT_TOOL_NAMES
+
+Tool names enabled by default: `"read"`, `"bash"`, `"edit"`, and `"write"`.
+"""
 const DEFAULT_TOOL_NAMES = ["read", "bash", "edit", "write"]
+
+"""
+    OPTIONAL_TOOL_NAMES
+
+Additional tool names that can be enabled explicitly: `"grep"`, `"find"`,
+`"ls"`, and `"powershell"`.
+"""
 const OPTIONAL_TOOL_NAMES = ["grep", "find", "ls", "powershell"]
 
 const TOOL_SNIPPETS = Dict{String,String}(
@@ -26,6 +38,26 @@ const TOOL_GUIDELINES = Dict{String,Vector{String}}(
     "powershell" => ["You can inspect PI_* environment variables for current model and session details."],
 )
 
+"""
+    create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
+                shell_path=nothing, env=nothing)
+
+Create a single tool by name. Supported names are the union of
+[`DEFAULT_TOOL_NAMES`](@ref) and [`OPTIONAL_TOOL_NAMES`](@ref).
+
+# Arguments
+- `name`: tool name.
+- `cwd`: working directory for the tool.
+- `model`: model used to decide whether `read` may attach images.
+- `shell_path`: explicit shell for the `bash` tool.
+- `env`: environment variables for `bash` and `powershell`.
+
+# Returns
+A `PiAgentCore.Tool`.
+
+# Throws
+`ArgumentError` when `name` is unknown.
+"""
 function create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
                      shell_path=nothing, env::Union{Nothing,Dict{String,String}}=nothing)
     supports_images = model === nothing || ("image" in model.input)
@@ -50,6 +82,16 @@ function create_tool(name::AbstractString, cwd::AbstractString; model=nothing,
     throw(ArgumentError("Unknown tool: $(name)"))
 end
 
+"""
+    create_tools(cwd::AbstractString; names=DEFAULT_TOOL_NAMES, model=nothing,
+                 shell_path=nothing, env=nothing)
+
+Create the requested tools in order. See [`create_tool`](@ref) for the
+meaning of the arguments.
+
+# Returns
+`Vector{PiAgentCore.Tool}`.
+"""
 function create_tools(cwd::AbstractString; names=DEFAULT_TOOL_NAMES, model=nothing,
                       shell_path=nothing,
                       env::Union{Nothing,Dict{String,String}}=nothing)

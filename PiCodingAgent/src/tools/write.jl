@@ -10,6 +10,18 @@ const WRITE_SCHEMA = Dict{String,Any}(
     "additionalProperties" => false,
 )
 
+"""
+    write_tool(cwd::String)
+
+Create the `write` tool, which creates or overwrites a file and any missing
+parent directories. Writes run sequentially under the file-mutation lock.
+
+# Arguments
+- `cwd::String`: working directory used to resolve relative paths.
+
+# Returns
+A `PiAgentCore.Tool`.
+"""
 function write_tool(cwd::String)
     execute = function (id, args, signal, on_update)
         resolved = resolve_to_cwd(String(args["path"]), cwd)

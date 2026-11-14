@@ -18,6 +18,14 @@ function _assistant_text(msg::AssistantMessage)
     return String(take!(io))
 end
 
+"""
+    is_context_overflow(msg::AssistantMessage; context_window=nothing) -> Bool
+
+Return `true` when `msg` failed because the prompt exceeded the model's
+context window. Checks the error text of `"error"` messages (ignoring
+rate-limit wording) and, when `context_window` is given, the reported input
+tokens of `"stop"` and `"length"` messages.
+"""
 function is_context_overflow(msg::AssistantMessage; context_window::Union{Nothing,Int}=nothing)
     text = _assistant_text(msg)
     if msg.stop_reason == "error"

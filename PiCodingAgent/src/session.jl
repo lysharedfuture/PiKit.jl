@@ -2,8 +2,27 @@ const LOG_TAG = "coding_session"
 
 const SESSION_VERSION = 3
 
+"""
+    AbstractSessionEntry
+
+Supertype of all session log entries. Every entry has an `id`, a `parent_id`, a
+`timestamp`, and type-specific payload fields.
+"""
 abstract type AbstractSessionEntry end
 
+"""
+    SessionHeader(id, version, timestamp, cwd, parent_session, extra)
+
+First line of a session file, describing the session itself.
+
+# Fields
+- `id::String`: unique session id.
+- `version::Int`: session format version (currently 3).
+- `timestamp::String`: ISO-8601 creation time.
+- `cwd::String`: working directory of the session.
+- `parent_session::Union{Nothing,String}`: path of the session this was forked from.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct SessionHeader
     id::String
     version::Int
@@ -13,6 +32,16 @@ struct SessionHeader
     extra::Dict{String,Any}
 end
 
+"""
+    MessageEntry(id, parent_id, timestamp, message, extra)
+
+A conversation message persisted in the session log.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `message::PiAISDK.AbstractMessage`: the stored message.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct MessageEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -21,6 +50,17 @@ struct MessageEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    ModelChangeEntry(id, parent_id, timestamp, provider, model_id, extra)
+
+Records that the session switched models.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `provider::String`: provider identifier.
+- `model_id::String`: model identifier.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct ModelChangeEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -30,6 +70,16 @@ struct ModelChangeEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    ThinkingLevelChangeEntry(id, parent_id, timestamp, thinking_level, extra)
+
+Records that the session changed its reasoning level.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `thinking_level::String`: new level (for example `"off"` or `"high"`).
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct ThinkingLevelChangeEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -38,6 +88,19 @@ struct ThinkingLevelChangeEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    UsageEntry(id, parent_id, timestamp, kind, provider, model, usage, note, extra)
+
+Records token usage reported by a model response.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `kind::String`: usage category label.
+- `provider::String`, `model::String`: originating provider and model.
+- `usage::PiAISDK.Usage`: token counts.
+- `note::Union{Nothing,String}`: optional annotation.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct UsageEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -50,6 +113,23 @@ struct UsageEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    CompactionEntry(id, parent_id, timestamp, summary, first_kept_entry_id,
+                    tokens_before, system_message, usage, details, from_hook, extra)
+
+Records a compaction summary and the point where live context resumes.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `summary::String`: structured summary of the compacted messages.
+- `first_kept_entry_id::String`: first entry still included verbatim.
+- `tokens_before::Int`: estimated context tokens before compaction.
+- `system_message::Union{Nothing,PiAISDK.SystemMessage}`: replacement system message.
+- `usage::Union{Nothing,PiAISDK.Usage}`: token usage of the summarization request.
+- `details::Any`: optional hook-provided data.
+- `from_hook::Union{Nothing,Bool}`: whether a hook produced the summary.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct CompactionEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -64,6 +144,17 @@ struct CompactionEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    ContextEditEntry(id, parent_id, timestamp, target_id, replacement, extra)
+
+Rewrites or omits an earlier entry when building model context.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `target_id::String`: id of the entry being edited.
+- `replacement::Any`: replacement message, or `nothing` to omit the target.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct ContextEditEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -73,6 +164,16 @@ struct ContextEditEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    SessionInfoEntry(id, parent_id, timestamp, name, extra)
+
+Stores session metadata such as its display name.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: entry identity and ordering.
+- `name::Union{Nothing,String}`: session display name.
+- `extra::Dict{String,Any}`: unknown fields preserved from disk.
+"""
 struct SessionInfoEntry <: AbstractSessionEntry
     id::String
     parent_id::Union{Nothing,String}
@@ -81,6 +182,17 @@ struct SessionInfoEntry <: AbstractSessionEntry
     extra::Dict{String,Any}
 end
 
+"""
+    UnknownEntry(id, parent_id, timestamp, entry_type, raw)
+
+Placeholder for entry types this version does not understand. The raw JSON is
+kept so the entry can be written back unchanged.
+
+# Fields
+- `id`, `parent_id`, `timestamp`: available identity fields (may be `nothing`).
+- `entry_type::String`: the unrecognized `type` value.
+- `raw::Dict{String,Any}`: original JSON object.
+"""
 struct UnknownEntry <: AbstractSessionEntry
     id::Union{Nothing,String}
     parent_id::Union{Nothing,String}
@@ -89,6 +201,19 @@ struct UnknownEntry <: AbstractSessionEntry
     raw::Dict{String,Any}
 end
 
+"""
+    SessionManager(header, entries, leaf_id, path, io)
+
+In-memory view of a session file: the header, all appended entries, the active
+leaf, and the append-only IO handle.
+
+# Fields
+- `header::SessionHeader`: session metadata.
+- `entries::Vector{AbstractSessionEntry}`: entries in file order.
+- `leaf_id::Union{Nothing,String}`: id of the active branch tip.
+- `path::Union{Nothing,String}`: session file path, or `nothing` for in-memory sessions.
+- `io::Union{Nothing,IO}`: open append handle.
+"""
 mutable struct SessionManager
     header::SessionHeader
     entries::Vector{AbstractSessionEntry}
@@ -100,10 +225,28 @@ end
 entry_id(e::AbstractSessionEntry) = e.id
 entry_parent(e::AbstractSessionEntry) = e.parent_id
 
+"""
+    now_iso()
+
+Return the current UTC time formatted as ISO-8601 with milliseconds and a
+trailing `Z`.
+"""
 function now_iso()
     return Dates.format(Dates.now(Dates.UTC), "yyyy-mm-ddTHH:MM:SS.sss") * "Z"
 end
 
+"""
+    new_entry_id(existing::Set{String})
+
+Generate an 8-character hexadecimal entry id that is not in `existing`, falling
+back to a UUID after repeated collisions.
+
+# Arguments
+- `existing::Set{String}`: ids already in use.
+
+# Returns
+`String` entry id.
+"""
 function new_entry_id(existing::Set{String})
     for _ in 1:100
         id = bytes2hex(rand(UInt8, 4))
@@ -112,18 +255,48 @@ function new_entry_id(existing::Set{String})
     return string(uuid4())
 end
 
+"""
+    session_root(; dir=nothing)
+
+Return the root directory holding session files: `dir` when given,
+`PIKIT_SESSION_DIR` when set, otherwise `<agent_dir>/sessions`.
+"""
 function session_root(; dir=nothing)
     dir !== nothing && return String(dir)
     haskey(ENV, "PIKIT_SESSION_DIR") && return ENV["PIKIT_SESSION_DIR"]
     return joinpath(default_agent_dir(), "sessions")
 end
 
+"""
+    session_dir_for_cwd(cwd::String; dir=nothing)
+
+Return the session directory for a working directory, named `--<slug>--` under
+[`session_root`](@ref).
+
+# Arguments
+- `cwd::String`: working directory.
+- `dir`: explicit session root.
+
+# Returns
+`String` directory path.
+"""
 function session_dir_for_cwd(cwd::String; dir=nothing)
     root = session_root(; dir=dir)
     slug = replace(strip(cwd, '/'), r"[/\\:]" => "-")
     return joinpath(root, "--" * slug * "--")
 end
 
+"""
+    header_to_json(h::SessionHeader)
+
+Serialize a session header to a JSON-ready dictionary with `type = "session"`.
+
+# Arguments
+- `h::SessionHeader`: header to serialize.
+
+# Returns
+`Dict{String,Any}`.
+"""
 function header_to_json(h::SessionHeader)
     d = Dict{String,Any}(h.extra)
     d["type"] = "session"
@@ -135,6 +308,18 @@ function header_to_json(h::SessionHeader)
     return d
 end
 
+"""
+    entry_to_json(entry::AbstractSessionEntry)
+
+Serialize a session entry to a JSON-ready dictionary including its `type`,
+`id`, `parentId`, and `timestamp`.
+
+# Arguments
+- `entry`: any concrete [`AbstractSessionEntry`](@ref).
+
+# Returns
+`Dict{String,Any}`.
+"""
 function entry_to_json(e::MessageEntry)
     d = Dict{String,Any}(e.extra)
     d["type"] = "message"; d["id"] = e.id; d["parentId"] = e.parent_id
@@ -202,6 +387,18 @@ function _entry_extra(d, typ)
     return Dict{String,Any}(String(k) => plain(v) for (k, v) in d if !(String(k) in known))
 end
 
+"""
+    entry_from_json(d)
+
+Parse a decoded JSON dictionary from a session file into the matching session
+entry. Unknown `type` values become [`UnknownEntry`](@ref).
+
+# Arguments
+- `d`: dictionary decoded from one JSONL line.
+
+# Returns
+An [`AbstractSessionEntry`](@ref).
+"""
 function entry_from_json(d)
     typ = String(get(d, "type", ""))
     id = get(d, "id", nothing)
@@ -248,6 +445,29 @@ function _new_header(cwd; id=nothing, parent=nothing)
                          parent, Dict{String,Any}())
 end
 
+"""
+    create_session(cwd::String; id=nothing, dir=nothing, parent=nothing,
+                   in_memory=false, name=nothing)
+
+Create a new session. Unless `in_memory` is set, a JSONL file is created under
+[`session_dir_for_cwd`](@ref) and the header is written immediately.
+
+# Arguments
+- `cwd::String`: working directory of the session.
+- `id`: explicit session id.
+- `dir`: explicit session root directory.
+- `parent`: path of the session this one was forked from.
+- `in_memory::Bool`: keep entries in memory only.
+- `name`: optional session display name.
+
+# Returns
+A [`SessionManager`](@ref).
+
+# Example
+```julia
+session = create_session(pwd(); in_memory=true)
+```
+"""
 function create_session(cwd::String; id=nothing, dir=nothing, parent=nothing, in_memory=false, name=nothing)
     header = _new_header(cwd; id=id, parent=parent)
     if in_memory
@@ -267,6 +487,21 @@ function create_session(cwd::String; id=nothing, dir=nothing, parent=nothing, in
     return sm
 end
 
+"""
+    load_session(path::String)
+
+Load a session from a JSONL file, skipping malformed lines, reopening the file
+for appending, and treating the last entry as the active leaf.
+
+# Arguments
+- `path::String`: session file path.
+
+# Returns
+A [`SessionManager`](@ref).
+
+# Throws
+`ArgumentError` when the file does not exist.
+"""
 function load_session(path::String)
     isfile(path) || throw(ArgumentError("Session file not found: $(path)"))
     raw = read(path, String)
@@ -322,6 +557,20 @@ function _append_entry(sm::SessionManager, entry::AbstractSessionEntry)
     return entry
 end
 
+"""
+    append_entry!(sm::SessionManager, entry::AbstractSessionEntry)
+
+Append an entry to the session, assigning an id when missing and defaulting
+`parent_id` to the current leaf. The entry is written to disk when the session
+has an open file.
+
+# Arguments
+- `sm::SessionManager`: target session.
+- `entry`: entry to append.
+
+# Returns
+The stored entry, possibly a copy with generated id or parent.
+"""
 function append_entry!(sm::SessionManager, entry::AbstractSessionEntry)
     existing = Set{String}(e.id for e in sm.entries if e.id !== nothing)
     id = entry.id
@@ -355,6 +604,23 @@ _with_parent(e::ContextEditEntry, p) = ContextEditEntry(e.id, p, e.timestamp, e.
 _with_parent(e::SessionInfoEntry, p) = SessionInfoEntry(e.id, p, e.timestamp, e.name, e.extra)
 _with_parent(e, p) = e
 
+"""
+    append_message!(sm::SessionManager, message::PiAISDK.AbstractMessage; timestamp=now_iso())
+
+Append a conversation message to the session as a [`MessageEntry`](@ref).
+
+# Arguments
+- `sm::SessionManager`: target session.
+- `message`: message to persist.
+- `timestamp`: ISO-8601 entry timestamp.
+
+# Returns
+The appended [`MessageEntry`](@ref).
+
+# Throws
+`ArgumentError` when asked to persist an assistant message still marked
+`"pending"`.
+"""
 function append_message!(sm::SessionManager, message::PiAISDK.AbstractMessage; timestamp=now_iso())
     if message isa PiAISDK.AssistantMessage && message.stop_reason == "pending"
         throw(ArgumentError("refusing to persist a pending assistant message"))
@@ -362,6 +628,14 @@ function append_message!(sm::SessionManager, message::PiAISDK.AbstractMessage; t
     return append_entry!(sm, MessageEntry("", sm.leaf_id, timestamp, message, Dict{String,Any}()))
 end
 
+"""
+    close!(sm::SessionManager)
+
+Flush and close the session's append handle. Safe to call more than once.
+
+# Returns
+`nothing`.
+"""
 function close!(sm::SessionManager)
     if sm.io !== nothing
         try
@@ -401,6 +675,21 @@ function _has_tool_results_for(messages, assistant::PiAISDK.AssistantMessage)
     return PiAISDK.ToolResultMessage[m for m in messages if m isa PiAISDK.ToolResultMessage && m.tool_call_id in call_ids]
 end
 
+"""
+    build_context(sm::SessionManager; include_system::Bool=true)
+
+Reconstruct the model message history for the active branch of a session:
+apply context edits, honor the latest compaction entry, and drop tool results
+whose originating tool calls were removed.
+
+# Arguments
+- `sm::SessionManager`: session to read.
+- `include_system::Bool`: accepted for API compatibility and currently unused;
+  stored system messages are always included.
+
+# Returns
+`Vector{PiAISDK.AbstractMessage}`.
+"""
 function build_context(sm::SessionManager; include_system::Bool=true)
     chain = _path_from_leaf(sm)
     edits = Dict{String,Any}()
@@ -458,6 +747,18 @@ function build_context(sm::SessionManager; include_system::Bool=true)
     return out
 end
 
+"""
+    list_sessions(cwd::String; dir=nothing)
+
+List session files for a working directory, newest first.
+
+# Arguments
+- `cwd::String`: working directory.
+- `dir`: explicit session root.
+
+# Returns
+`Vector{String}` of `.jsonl` paths.
+"""
 function list_sessions(cwd::String; dir=nothing)
     dir_path = session_dir_for_cwd(cwd; dir=dir)
     isdir(dir_path) || return String[]
@@ -466,6 +767,22 @@ function list_sessions(cwd::String; dir=nothing)
     return files
 end
 
+"""
+    find_session(id_or_path::String; dir=nothing)
+
+Find a session file by exact path, filename prefix, or filename substring,
+searching recursively under [`session_root`](@ref).
+
+# Arguments
+- `id_or_path::String`: path, id prefix, or filename fragment.
+- `dir`: explicit session root.
+
+# Returns
+`String` path of the first match.
+
+# Throws
+`ArgumentError` when no session matches.
+"""
 function find_session(id_or_path::String; dir=nothing)
     isfile(id_or_path) && return id_or_path
     root = session_root(; dir=dir)
@@ -487,6 +804,24 @@ function find_session(id_or_path::String; dir=nothing)
     return matches[1]
 end
 
+"""
+    fork_session(sm::SessionManager, entry_id::String, new_cwd::String; dir=nothing)
+
+Fork the active branch of a session at `entry_id` into a new session file,
+copying the preceding entries with fresh ids and rewiring their parents.
+
+# Arguments
+- `sm::SessionManager`: source session.
+- `entry_id::String`: branch entry to fork at.
+- `new_cwd::String`: working directory of the new session.
+- `dir`: explicit session root.
+
+# Returns
+A new [`SessionManager`](@ref).
+
+# Throws
+`ArgumentError` when the entry is not on the active branch.
+"""
 function fork_session(sm::SessionManager, entry_id::String, new_cwd::String; dir=nothing)
     chain = _path_from_leaf(sm)
     idx = findfirst(e -> e.id == entry_id, chain)

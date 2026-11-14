@@ -203,6 +203,13 @@ function _handle_rpc_command(s::AgentSession, d, running::Ref{Union{Nothing,Task
     return
 end
 
+"""
+    run_rpc_mode(s::AgentSession)
+
+Read line-delimited JSON commands from stdin until EOF, writing responses and
+session events to stdout. Malformed lines produce an error response instead of
+terminating the loop. Aborts any in-flight prompt before returning `0`.
+"""
 function run_rpc_mode(s::AgentSession)
     running = Ref{Union{Nothing,Task}}(nothing)
     unsubscribe = subscribe(s, ev -> _rpc_write(session_json_event(s, ev)))
